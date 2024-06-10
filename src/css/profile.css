@@ -1,0 +1,16 @@
+.user-profile {
+  padding: 10px;
+}
+.user-profile .profile-card .row {
+  width: 300px;
+  height: 400px;
+}
+.user-profile .profile-card .file-upload {
+  border: 2px solid #595b5c;
+  border-radius: 20px;
+}
+.user-profile .car-detail {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}/*# sourceMappingURL=profile.css.map */

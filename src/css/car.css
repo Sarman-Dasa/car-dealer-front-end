@@ -1,0 +1,42 @@
+.car-container {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+.car-container h2 {
+  color: #007bff;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.car-container .form-label {
+  color: #6c757d;
+}
+.car-container .form-control {
+  border-radius: 5px;
+}
+.car-container .form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+.car-container button .save {
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+}
+.car-container button .save:hover {
+  background-color: #0062cc;
+}
+
+.owner-detail {
+  margin-top: 20px !important;
+}
+.owner-detail .heading {
+  font-size: 18px;
+  font-weight: 600;
+  display: block;
+}
+.owner-detail img {
+  height: 200px;
+  width: 200px;
+}/*# sourceMappingURL=car.css.map */

@@ -1,0 +1,36 @@
+.file-input {
+    display: none;
+  }
+
+  button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #dc3545;
+  }
+  
+  .file-upload {
+    border: 2px dashed #595b5c;
+    border-radius: 20px;
+    min-width: 200px;
+    min-height: 200px;
+    position: relative;
+
+    img {
+      position: absolute;
+      top: 30%;
+      left: 40%;
+    }
+    p {
+      position: absolute;
+      top:70%;
+      left:20%;
+    }
+  }

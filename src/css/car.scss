@@ -1,0 +1,54 @@
+// SCSS file for CarForm styling
+
+$primary-color: #007bff;
+$secondary-color: #6c757d;
+$background-color: #f8f9fa;
+$border-radius: 5px;
+
+.car-container {
+  background-color: $background-color;
+  padding: 20px;
+  border-radius: $border-radius;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  h2 {
+    color: $primary-color;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    color: $secondary-color;
+  }
+
+  .form-control {
+    border-radius: $border-radius;
+  }
+
+  .form-control:focus {
+    border-color: $primary-color;
+    box-shadow: 0 0 5px rgba($primary-color, 0.5);
+  }
+
+  button .save {
+    background-color: $primary-color;
+    border: none;
+    border-radius: $border-radius;
+    &:hover {
+      background-color: darken($primary-color, 10%);
+    }
+  }
+}
+
+.owner-detail {
+  margin-top: 20px !important;
+  .heading {
+    font-size: 18px;
+    font-weight: 600;
+    display: block;
+  }
+  img {
+    height: 200px;
+    width: 200px;
+  }
+}

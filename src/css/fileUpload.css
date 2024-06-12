@@ -1,8 +1,7 @@
-.file-input {
+.custome-file-upload .file-input {
   display: none;
 }
-
-button {
+.custome-file-upload button {
   margin-top: 10px;
   padding: 10px 20px;
   background-color: #dc3545;
@@ -11,24 +10,22 @@ button {
   border-radius: 5px;
   cursor: pointer;
 }
-
-button:hover {
+.custome-file-upload button:hover {
   background-color: #dc3545;
 }
-
-.file-upload {
+.custome-file-upload .file-upload {
   border: 2px dashed #595b5c;
   border-radius: 20px;
   min-width: 200px;
   min-height: 200px;
   position: relative;
 }
-.file-upload img {
+.custome-file-upload .file-upload img {
   position: absolute;
   top: 30%;
   left: 40%;
 }
-.file-upload p {
+.custome-file-upload .file-upload p {
   position: absolute;
   top: 70%;
   left: 20%;

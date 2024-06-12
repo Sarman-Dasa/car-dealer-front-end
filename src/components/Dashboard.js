@@ -12,8 +12,8 @@ import {
   Tooltip,
   OverlayTrigger,
 } from "react-bootstrap";
-import AddDum from "../data/AddDum";
 import { MdFilterAlt } from "react-icons/md";
+import { useSelector } from "react-redux";
 
 export default function Dashboard() {
   const [cars, setCars] = useState();
@@ -21,6 +21,8 @@ export default function Dashboard() {
   const [carType, setCarType] = useState("available");
   const [priceRange, setPriceRange] = useState(0);
   const navigate = useNavigate();
+  const userInfo = useSelector((state) => state.app.user);
+
   const viewMore = (id) => {
     navigate(`/car-view/${id}`);
   };
@@ -28,7 +30,9 @@ export default function Dashboard() {
   const getCars = async () => {
     const carCollection = collection(db, "cars");
 
-    const whereConditions = [];
+    const whereConditions = [
+      where("owner_id", "!=",userInfo.id)
+    ];
 
     if (carType === "available") {
       whereConditions.push(where("status", "==", "available"));
@@ -61,6 +65,10 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
+    if(!userInfo) {
+      navigate('/sign-in');
+      return;
+    }
     getCars();
   }, []);
 
@@ -70,7 +78,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <MdFilterAlt size="36px" onClick={() => setshowFilter(!showFilter)} />
+      <MdFilterAlt size="36px" onClick={() => setshowFilter(!showFilter)} className="ms-5"/>
       <Modal show={showFilter} onHide={handleClose} size="sm">
         <Modal.Header closeButton>
           <Modal.Title>Filter</Modal.Title>
@@ -113,7 +121,6 @@ export default function Dashboard() {
         </Modal.Footer>
       </Modal>
       <Container>
-        {cars && cars.length === 1 && <AddDum />}
         <Row>
           {cars &&
             cars.map((item) => (
@@ -125,7 +132,7 @@ export default function Dashboard() {
                     style={{ height: "250px", objectFit: "contain" }}
                   />
                   <Card.Body>
-                    <Card.Title>{item.compna_name}</Card.Title>
+                    <Card.Title>{item.company_name}</Card.Title>
                     <Card.Subtitle className="mb-2 text-muted">
                       {item.model}
                     </Card.Subtitle>
@@ -138,12 +145,12 @@ export default function Dashboard() {
                   <Card.Footer className="text-muted">
                     {carType === 'available' ?
                     <button
-                    className="text-bg-primary"
+                    className="text-bg-primary btn btn-primary"
                     onClick={() => viewMore(item.id)}
                   >
                     View
                   </button> : <button
-                      className="text-bg-primary"
+                      className="text-bg-primary btn btn-primary"
                       onClick={() => getCarForRent(item.id)}
                     >
                       Get

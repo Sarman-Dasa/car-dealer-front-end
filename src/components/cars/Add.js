@@ -1,20 +1,21 @@
 // Importing necessary libraries
-import React, { useState} from "react";
+import React, { useEffect, useState } from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "../../css/car.css";
 import FileUpload from "../fileUpload";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, storage } from "../firebase/Firebase";
 import { useSelector } from "react-redux";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 as uuid } from "uuid";
 import { toast, ToastContainer } from "react-toastify";
 import Emitter from "../../services/emitter";
+import { useParams, useNavigate } from "react-router-dom";
 
 // CarForm component
 export default function CarForm() {
   const [carDetail, setCarDetail] = useState({
-    compna_name: "",
+    company_name: "",
     model: "",
     mileage: "",
     color: "",
@@ -29,7 +30,10 @@ export default function CarForm() {
     image_url: "",
   });
 
-  // const [isEnableSubmitBtn,setIsEnableSubmitBtn] = useState(true);
+  const { id } = useParams();
+  const [loader,setLoader] = useState(false);
+  const navigate = useNavigate();
+  const [carImage,setCarImage] = useState(null);
 
   const user = useSelector((state) => state.app.user);
 
@@ -52,6 +56,14 @@ export default function CarForm() {
       owner_id: user.id,
     }));
 
+    if (id) {
+      updateCarDetail();
+    } else {
+      addCarDetail();
+    }
+  };
+
+  async function addCarDetail() {
     const carCollection = collection(db, "cars");
     await addDoc(carCollection, carDetail)
       .then((response) => {
@@ -62,7 +74,20 @@ export default function CarForm() {
         console.log("Error", error);
       });
     console.log("cars", carDetail);
-  };
+  }
+
+  async function updateCarDetail() {
+    const carDoc = doc(db, "cars",id);
+    await updateDoc(carDoc, carDetail)
+    .then((response) => {
+      console.log("Response", response);
+      navigate('/profile');
+    })
+    .catch((error) => {
+      console.log("Error", error);
+    });
+  console.log("cars", carDetail);
+  }
 
   // Store file into firebase storege
   const saveFileData = (e) => {
@@ -92,7 +117,7 @@ export default function CarForm() {
   //Clear form data
   function clearData() {
     setCarDetail({
-      compna_name: "",
+      company_name: "",
       model: "",
       mileage: "",
       color: "",
@@ -107,9 +132,38 @@ export default function CarForm() {
       image_url: "",
     });
 
-    // Call EventEmitter to clear file data 
-    Emitter.emit('CLEAR_FILE_DATA');
+    // Call EventEmitter to clear file data
+    Emitter.emit("CLEAR_FILE_DATA");
   }
+
+  // get Car Detail
+
+  async function getCarDetail() {
+    setLoader(true);
+    const carDoc = doc(db, "cars", id);
+    const response = await getDoc(carDoc);
+    const data = response.data()
+    setCarDetail(data);
+    setCarImage([{
+      url: data.image_url,
+      id: id,
+      name:data.company_name
+    }])
+    setLoader(false);
+  }
+
+  const removeFile = () => {
+    setCarDetail((preview) => ({
+      ...preview,
+      image_url:null,
+    }));
+  }
+
+  useEffect(() => {
+    if (id) {
+      getCarDetail();
+    }
+  }, [id]);
 
   return (
     <Container className="car-container">
@@ -122,8 +176,8 @@ export default function CarForm() {
               <Form.Control
                 type="text"
                 placeholder="Enter Company name"
-                name="compna_name"
-                value={carDetail.compna_name}
+                name="company_name"
+                value={carDetail.company_name}
                 onChange={handleFormData}
               />
             </Form.Group>
@@ -281,13 +335,24 @@ export default function CarForm() {
           </Col>
         </Row>
         <Row>
-          <FileUpload handelFileUpload={saveFileData} />
+         { !loader && <FileUpload handelFileUpload={saveFileData} handelFileRemove={removeFile} title={null} file={carImage}/> }
         </Row>
 
-        <Button variant="primary" className="mt-1 save" type="button" onClick={handleSubmit}>
+        <Button
+          variant="primary"
+          className="mt-1 save"
+          type="button"
+          onClick={handleSubmit}
+          disabled={carDetail && !carDetail.image}
+        >
           Submit
         </Button>
-        <Button variant="primary" className="mt-1 ms-5 btn btn-danger clear" type="button" onClick={clearData}>
+        <Button
+          variant="primary"
+          className="mt-1 ms-5 btn btn-danger clear"
+          type="button"
+          onClick={clearData}
+        >
           Clear
         </Button>
       </Form>

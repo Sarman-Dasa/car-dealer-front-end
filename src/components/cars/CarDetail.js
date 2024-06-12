@@ -5,7 +5,9 @@ import { useSelector } from "react-redux";
 import { db } from "../firebase/Firebase";
 import { IoMdArrowRoundBack } from "react-icons/io";
 import { useSearchParams } from "react-router-dom";
-
+import GoogleMap from "../map/index";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 import {
   Badge,
   Button,
@@ -28,19 +30,21 @@ export default function CarDetail() {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isCarForRent, setIsCarForRent] = useState(false);
-  const [showModal,setShowModal] = useState(false)
+  const [showModal, setShowModal] = useState(false);
   const type = searchParams.get("type");
   const currentDate = moment().format("YYYY-MM-DD");
+  const MySwal = withReactContent(Swal);
 
-  const [carRentDetail,setCarRentDetail] = useState({
-    startDate:currentDate,
-    endDate:currentDate,
-    owner_id:null,
-    customer_id:userInfo.id,
-    no_of_day:null,
-    rent:null,
-    car_id:id
-  })
+  const [carRentDetail, setCarRentDetail] = useState({
+    startDate: currentDate,
+    endDate: currentDate,
+    owner_id: null,
+    customer_id: userInfo.id,
+    no_of_day: null,
+    rent: null,
+    car_id: id,
+    pickup_location: {},
+  });
 
   // const [startDate,setStartDate] = useState(currentDate);
   // const [endDate,setEndDate] = useState(currentDate);
@@ -51,13 +55,13 @@ export default function CarDetail() {
     setLoader(true);
     const response = await getDoc(carDoc);
     const carDetail = response.data();
-   
-    const OWNER_ID = carDetail && carDetail.owner_id
+
+    const OWNER_ID = carDetail && carDetail.owner_id;
     // set car owner Id
     setCarRentDetail((preview) => ({
       ...preview,
-      owner_id:OWNER_ID
-    }))
+      owner_id: OWNER_ID,
+    }));
 
     setCar(carDetail);
 
@@ -79,6 +83,24 @@ export default function CarDetail() {
     setLoader(false);
   };
 
+  // Show Confirmation message for car delete
+  const carBuyConfirmation = (id) => {
+    MySwal.fire({
+      title: "Are you sure to buy this car?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+      confirmButtonClass: "",
+      customClass: {
+        confirmButton: "btn text-bg-success",
+        cancelButton: "btn btn-danger",
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        buyCar(); // Yes to call buyCar function
+      }
+    });
+  };
   // Buy car funcation
   function buyCar() {
     const userRef = doc(db, "cars", id);
@@ -116,30 +138,46 @@ export default function CarDetail() {
     setLoader(false);
   };
 
-
   // set car for rent form detail
   const handelFormData = async (e) => {
     const { name, value } = e.target;
+    console.log("name, value: ", name, value);
+
     setCarRentDetail((preview) => ({
       ...preview,
       [name]: value,
     }));
   };
 
-
   //store data into firebase database
   const getCarForRent = async () => {
-      const carRentDoc = collection(db,'rent_car_details');
-      await addDoc(carRentDoc,carRentDetail).then((response) => {
-        console.log('response: ', response);
-        toast.success('Your car is booked');
-        setShowModal(false);
-      }).catch((err) => {
-        console.log('err: ', err);
-        
+    const carRentDoc = collection(db, "rent_car_details");
+    const carDoc = doc(db, "cars", id);
+    await addDoc(carRentDoc, carRentDetail)
+      .then((response) => {
+        // console.log("response: ", response);
+        updateDoc(carDoc, { status: "onRent" }) // Update car status as onRent
+          .then(() => {
+            toast.success("Your car is booked");
+            setShowModal(false);
+          })
+          .catch((err) => {
+            console.log("err: ", err);
+          });
+      })
+      .catch((err) => {
+        console.log("err: ", err);
       });
-  }
+  };
 
+  // set user location data
+  const handelUserLocation = (e) => {
+    console.log("e", e);
+    setCarRentDetail((preview) => ({
+      ...preview,
+      pickup_location: e,
+    }));
+  };
   useEffect(() => {
     getCarDetail();
     if (searchParams && type === "car_for_rent") {
@@ -151,23 +189,22 @@ export default function CarDetail() {
   useEffect(() => {
     let startDate = moment(carRentDetail.startDate);
     let endDate = moment(carRentDetail.endDate);
-    
+
     // Check if endDate is less than startDate
-    if(endDate.isBefore(startDate)) {
-      toast.warning('Please Select valid end date!')
-    }
-    else {
-      let dayDifference = endDate.diff(startDate, 'days') + 1;
+    if (endDate.isBefore(startDate)) {
+      toast.warning("Please Select valid end date!");
+    } else {
+      let dayDifference = endDate.diff(startDate, "days") + 1;
       const PER_DAY_RENT = 500;
       const totalRent = PER_DAY_RENT * dayDifference;
       setCarRentDetail((preview) => ({
         ...preview,
-        no_of_day:dayDifference,
-        rent:totalRent
-      }))
-      console.log("Number of days:", totalRent);
+        no_of_day: dayDifference,
+        rent: totalRent,
+      }));
+      // console.log("Number of days:", totalRent);
     }
-  },[carRentDetail.startDate,carRentDetail.endDate])
+  }, [carRentDetail.startDate, carRentDetail.endDate]);
 
   return (
     <div>
@@ -175,6 +212,7 @@ export default function CarDetail() {
         <IoMdArrowRoundBack />
         Back
       </Button>
+
       <Container className="mt-5">
         {loader && (
           <div className="text-center" style={{ marginTop: "30%" }}>
@@ -190,7 +228,7 @@ export default function CarDetail() {
                 {car.image_url && <Image src={car.image_url} fluid />}
               </Col>
               <Col md={3}>
-                <h2>{car.compna_name}</h2>
+                <h2>{car.company_name}</h2>
                 <p>
                   <strong>Model:</strong> {car.model}
                 </p>
@@ -218,13 +256,17 @@ export default function CarDetail() {
                   <strong>Transmission:</strong> {car.transmission}
                 </p>
 
+                {/* Buy & rent Button start */}
                 {!car.seller_id &&
                   car.owner_id !== userInfo.id &&
                   (isCarForRent ? (
-                    <Button onClick={() => setShowModal(true)}>Get Car For Rent</Button>
+                    <Button onClick={() => setShowModal(true)}>
+                      Get Car For Rent
+                    </Button>
                   ) : (
-                    <Button onClick={buyCar}> Buy</Button>
+                    <Button onClick={carBuyConfirmation}> Buy</Button>
                   ))}
+                {/* Buy & rent Button end */}
               </Col>
               <Col md={3} className="mt-4 pt-4">
                 <p>
@@ -300,42 +342,67 @@ export default function CarDetail() {
         )}
       </Container>
       <ToastContainer />
-      <Modal centered show={showModal} onHide={() => setShowModal(!showModal)} size="sm">
+
+      {/* Car for rent modal */}
+      <Modal
+        centered
+        show={showModal}
+        onHide={() => setShowModal(!showModal)}
+        size="lg"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Car for rent </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-        <Form.Group controlId="color">
-              <Form.Label>Star date</Form.Label>
-              <Form.Control
-                type="date"
-                placeholder="Enter car color"
-                name="startDate"
-                value={carRentDetail.startDate}
-                onChange={handelFormData}
-              />
-            </Form.Group>
-            <Form.Group controlId="color">
-              <Form.Label>End date</Form.Label>
-              <Form.Control
-                type="date"
-                placeholder="Enter car color"
-                name="endDate"
-                value={carRentDetail.endDate}
-                onChange={handelFormData}
-              />
-            </Form.Group>
-            <Form.Label className="mt-2">No of Days:: {carRentDetail.no_of_day}</Form.Label>
+          <Row className="mb-3">
+            <Col>
+              <Form.Group controlId="startDate">
+                <Form.Label>Star date</Form.Label>
+                <Form.Control
+                  type="date"
+                  placeholder="Enter car color"
+                  name="startDate"
+                  value={carRentDetail.startDate}
+                  onChange={handelFormData}
+                />
+              </Form.Group>
+            </Col>
+
+            <Col>
+              <Form.Group controlId="endDate">
+                <Form.Label>End date</Form.Label>
+                <Form.Control
+                  type="date"
+                  placeholder="Enter car color"
+                  name="endDate"
+                  value={carRentDetail.endDate}
+                  onChange={handelFormData}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row className="mb-3">
+            <Col>
+              <Form.Label className="mt-2">
+                No of Days:: {carRentDetail.no_of_day}
+              </Form.Label>
+            </Col>
+            <Col>
+              <Form.Label className="mt-2">
+                Total::{carRentDetail.rent}
+              </Form.Label>
+            </Col>
+          </Row>
+          <Form.Label className="mt-2">Select PickUp location :</Form.Label>
+          <GoogleMap getUserLocation={handelUserLocation} />
         </Modal.Body>
 
         <Modal.Footer>
-        <Form.Label className="mt-2">Total::{carRentDetail.rent}</Form.Label>
           <Button variant="primary" onClick={getCarForRent}>
             Pay
           </Button>
         </Modal.Footer>
       </Modal>
-      
     </div>
   );
 }

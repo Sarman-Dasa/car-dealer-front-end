@@ -8,7 +8,9 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB limit
 
 export default function FileUpload({
   handelFileUpload,
+  handelFileRemove,
   title,
+  file = [],
   isMultiple = false,
 }) {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -29,6 +31,7 @@ export default function FileUpload({
         .map((file) => ({
           id: uuid(),
           url: URL.createObjectURL(file),
+          name:file.name,
           image: file, // Include the actual file object if needed
         }));
       if (isMultiple) {
@@ -41,36 +44,19 @@ export default function FileUpload({
 
   const handleSaveButtonClick = () => {
     handelFileUpload(selectedFiles);
-    // if (selectedFiles && selectedFiles.length) {
-    //   selectedFiles.forEach((file, index) => {
-    //     const reader = new FileReader();
-    //     reader.onload = (e) => {
-    //       const fileData = e.target.result;
-    //       const fileName = file.name;
-    //       const files = JSON.stringify({
-    //         url: fileData,
-    //         name: fileName,
-    //       });
-    //       localStorage.setItem(`my-file-${index}-${fileName}`, files);
-    //     };
-    //     reader.readAsDataURL(file);
-    //   });
-
-    //   setToastMessage("Image(s) Uploaded successfully");
-    //   setShowToast(true);
-    // setTimeout(() => {
-    //   setSelectedFiles([]);
-    // }, 200);
-    // } else {
-    //   setToastMessage("Please upload image !");
-    //   setShowToast(true);
-    // }
   };
 
   //Remove File
   const removeImage = (id) => {
-    let file = selectedFiles.filter((item) => item.id !== id);
-    setSelectedFiles(file);
+    let index = selectedFiles.findIndex((item) => item.id === id);
+    // console.log('index: ', index);
+    let updatedFiles = [...selectedFiles];
+    let file = updatedFiles.splice(index, 1);
+    // console.log('file: ', file);
+    console.log('removed file: ', file);
+    handelFileRemove(file);
+    setSelectedFiles(updatedFiles);
+
   };
 
   useEffect(() => {
@@ -78,13 +64,16 @@ export default function FileUpload({
       setSelectedFiles([]);
     });
 
+    if(file) {
+      setSelectedFiles(file);
+    }
     return () => {
       Emitter.off("CLEAR_FILE_DATA");
     };
   }, []);
 
   return (
-    <Container>
+    <Container className="custome-file-upload">
       <Row>
         <Col>
           <Card>
@@ -105,12 +94,12 @@ export default function FileUpload({
             </Card.Body>
             <Card.Footer className="text-muted">
               <button onClick={handleSaveButtonClick} type="button" className="btn btn-primary">
-                Save
+                Upload
               </button>
             </Card.Footer>
           </Card>
         </Col>
-
+        {  console.log("selected",selectedFiles)}
         {selectedFiles.map((file, index) => (
           <div key={index} className="col-md-3 my-2">
             <Card style={{ width: "18rem", height: "100%" }}>
@@ -120,10 +109,10 @@ export default function FileUpload({
                 style={{ height: "200px", objectFit: "contain" }}
               />
               <Card.Body>
-                <Card.Title>{file.image.name}</Card.Title>
+                <Card.Title>{file.name}</Card.Title>
               </Card.Body>
               <Card.Footer className="text-muted">
-                <button onClick={() => removeImage(file.id)}>Delete</button>
+                <button type="button" onClick={() => removeImage(file.id)}>Delete</button>
               </Card.Footer>
             </Card>
           </div>

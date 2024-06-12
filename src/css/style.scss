@@ -1,0 +1,16 @@
+.app-container {
+  display: flex;
+//   flex-direction: column;
+  height: 400px;
+  max-height: calc(100vh - 100px);
+}
+
+.content {
+  display: flex;
+  flex: 1;
+}
+
+.map-container {
+  flex: 3;
+  position: relative;
+}

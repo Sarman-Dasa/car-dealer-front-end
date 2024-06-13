@@ -45,7 +45,7 @@ export default function SignIn() {
     dispatch(setLoginUserData(userInfo));
     const userStr = JSON.stringify(userInfo);
     localStorage.setItem("user", userStr);
-    navigate("/");
+    navigate("/dashboard");
   }
 
   return (

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, Col, Form, Row } from "react-bootstrap";
+import { Badge, Button, Card, Col, Form, Row, Spinner } from "react-bootstrap";
 import { db, storage } from "../firebase/Firebase";
 import "../../css/profile.css";
 import {
@@ -32,6 +32,7 @@ export default function Profile() {
   const [carCount, setCarCount] = useState(null);
   const [customerList, setCustomerList] = useState();
   const [carFilter, setCarFilter] = useState(null);
+  const [loader, setLoader] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   // Upload User profile image
@@ -95,20 +96,49 @@ export default function Profile() {
 
   // Update Car set car for rent
   const onChangeHandler = async (e, id) => {
-    //console.log(e.target.value, id);
     const carForRent = e.target.checked ? "yes" : "no";
 
+    if (carForRent === "yes") {
+      MySwal.fire({
+        title: "Add Detail",
+        icon: "none",
+        showCancelButton: true,
+        confirmButtonText: "Add",
+        input: "text",
+        inputPlaceholder: `
+        Enter per day rent
+      `,
+        inputValidator: (result) => {
+          return !result && "please enter rent!";
+        },
+        customClass: {
+          confirmButton: "btn text-bg-primary",
+          cancelButton: "btn btn-danger",
+        },
+      }).then((result) => {
+        if (result.isConfirmed) {
+          updateCarForRent(carForRent, id, result.value);
+        }
+      });
+    } else {
+      updateCarForRent(carForRent, id);
+    }
+  };
+
+  async function updateCarForRent(status, id, rentValue = null) {
     const carDoc = doc(db, "cars", id);
     await updateDoc(carDoc, {
-      car_for_rent: carForRent,
+      car_for_rent: status,
+      per_day_rent: rentValue,
     })
       .then(() => {
         console.log("Updated");
+        getCars();
       })
       .catch((error) => {
         console.log("Error", error);
       });
-  };
+  }
 
   // Delete Car
   async function deleteCar(id) {
@@ -125,6 +155,8 @@ export default function Profile() {
 
   // Get Car on rent details
   const getCarOnRentDetail = async () => {
+    setLoader(true);
+
     const carCollection = collection(db, "rent_car_details");
     const q = query(carCollection, where("owner_id", "==", userInfo.id));
     const response = await getDocs(q);
@@ -135,24 +167,15 @@ export default function Profile() {
     }));
 
     const customerIds = carOnRentList.map((obj) => obj.customer_id);
-    //  console.log('carOnRentList: ', carOnRentList);
     if (customerIds && customerIds.length) {
       getCustomerDetail(customerIds);
     }
-
     setCarOnRentList(carOnRentList);
-
-    setCarCount((preview) => ({
-      ...preview,
-      carOnRent: response.docs.length,
-    }));
-    //console.log("car on rent::",carCount);
+    setLoader(false);
   };
 
   // set status wise car Count
   const getStatusWiseCount = (items) => {
-    //console.log("items: ", items);
-    // if(cars && cars.length) {
     const carStatusCount = items.reduce((count, car) => {
       const { status } = car;
       count[status] = (count[status] || 0) + 1;
@@ -161,14 +184,12 @@ export default function Profile() {
       }
       return count;
     }, {});
-
-    // //console.log("carStatusCount: ", carStatusCount);
-    setCarCount((preview) => ({
-      ...preview,
+    setCarCount({
       avaliable: carStatusCount.available,
       carForRent: carStatusCount.car_for_rent,
       sold: carStatusCount.sold,
-    }));
+      carOnRent: carStatusCount.onRent,
+    });
   };
 
   // Get Customer Detail
@@ -196,35 +217,30 @@ export default function Profile() {
     } else if (carFilter === "car_for_rent") {
       filterData = cars.filter((item) => item.car_for_rent === "yes");
     }
-    // else if(carFilter === 'car_on_rent') {
-    //   const carId = carOnRentList.map((obj) => obj.car_id);
-    //   filterData = cars.filter((item) => carId.includes(item.id));
-    // }
     return filterData;
   }, [carFilter, cars]);
 
-
   // edit carDetail
   const editCarDetail = (id) => {
-    navigate(`/add-car/${id}`)
-  }
+    navigate(`/add-car/${id}`);
+  };
 
+  //Get Cars list
+  const getCars = async () => {
+    const carCollection = collection(db, "cars");
+    const q = query(carCollection, where("owner_id", "==", userInfo.id));
+
+    const response = await getDocs(q);
+
+    const cars = response.docs.map((item) => ({
+      ...item.data(),
+      id: item.id,
+    }));
+    console.log("cars", cars);
+    getStatusWiseCount(cars);
+    setCars(cars);
+  };
   useEffect(() => {
-    //Get Cars list
-    const getCars = async () => {
-      const carCollection = collection(db, "cars");
-      const q = query(carCollection, where("owner_id", "==", userInfo.id));
-
-      const response = await getDocs(q);
-
-      const cars = response.docs.map((item) => ({
-        ...item.data(),
-        id: item.id,
-      }));
-      console.log("cars", cars);
-      getStatusWiseCount(cars);
-      setCars(cars);
-    };
     getCars();
     getCarOnRentDetail();
     // getCarOnRentDetail();
@@ -239,7 +255,7 @@ export default function Profile() {
         />
       )}
       <div>
-        <Row className="user-profile">
+        <Row className="user-profile g-0">
           <Col className="col-3">
             {/* User Profile card view start */}
             {userInfo && (
@@ -269,8 +285,8 @@ export default function Profile() {
                 </div>
                 {/* User Profile card view end */}
 
-                {/* Car's count */}
-                <div className="mt-5">
+                {/* Car's count card Start */}
+                <div className="mt-2">
                   <div className="card" style={{ width: "18rem" }}>
                     <div className="card-body">
                       <h5 className="card-title">Car Count</h5>
@@ -322,101 +338,132 @@ export default function Profile() {
                     </ul>
                   </div>
                 </div>
+                {/* Car's count card end */}
               </div>
             )}
           </Col>
 
           {/* Car Details */}
           <Col md={9} sm={12} className="car-detail">
-            <Row>
-              {carsListFilter && carsListFilter.length ? (
-                carsListFilter.map((item) => (
-                  <div key={item.id} className="col-md-3 my-2">
-                    <Card style={{ width: "18rem", height: "500px" }}>
-                      <Card.Header className="text-end">
-                        <FaEdit
-                          className="text-primary"
-                          onClick={() => editCarDetail(item.id)}
-                        />
-                      </Card.Header>
-                      <Card.Img
-                        variant="bottom"
-                        src={item.image_url}
-                        style={{ height: "250px", objectFit: "contain" }}
-                      />
-                      <Card.Body>
-                        <Card.Title>{item.company_name}</Card.Title>
-                        <Card.Subtitle className="mb-2 text-muted">
-                          {item.model}
-                        </Card.Subtitle>
-                      </Card.Body>
-                      <Card.Text>
-                        <p className="ms-3" style={{ fontWeight: "600" }}>
-                          Rs.{item.price}
-                        </p>
-                        <p className="ms-3">
-                          <strong>Status:</strong>
-                          <Badge
-                            variant="primary"
-                            className={
-                              item.status == "available"
-                                ? `bg-primary`
-                                : `bg-danger`
-                            }
-                          >
-                            {item.status}
-                          </Badge>
-                        </p>
-                        <span>
-                          <Form.Check
-                            type="switch"
-                            id="custom-switch"
-                            label="car for rent"
-                            onChange={(e) => onChangeHandler(e, item.id)}
-                            className="ms-3"
-                            checked={item.car_for_rent === "yes" ? true : null}
+            {loader ? (
+              <div className="text-center" style={{ marginTop: "20%" }}>
+                <Spinner animation="border" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </Spinner>
+              </div>
+            ) : carFilter !== "onRent" ? (
+              <Row>
+                {carsListFilter && carsListFilter.length ? (
+                  carsListFilter.map((item) => (
+                    <div key={item.id} className="col-md-3 my-2">
+                      <Card className="card-custome">
+                        <Card.Header className="text-end">
+                          <FaEdit
+                            className="text-primary"
+                            onClick={() => editCarDetail(item.id)}
                           />
-                        </span>
-                      </Card.Text>
-                      <Card.Footer className="text-muted">
-                        <Button
-                          className="text-bg-primary"
-                          onClick={() => navigate(`/car-view/${item.id}`)}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          className="text-bg-danger btn-danger ms-2"
-                          onClick={() => deleteConfirmation(item.id)}
-                        >
-                          Delete
-                        </Button>
-                      </Card.Footer>
-                    </Card>
+                        </Card.Header>
+                        <Card.Img
+                          variant="bottom"
+                          src={item.image_url}
+                          style={{ height: "250px", objectFit: "inherit" }}
+                        />
+                        <Card.Body>
+                          <Card.Title>{item.company_name}</Card.Title>
+                          <Card.Subtitle className="mb-2 float-end me-2">
+                            {item.model}
+                          </Card.Subtitle>
+                        </Card.Body>
+                        <Card.Text>
+                          <p className="ms-3" style={{ fontWeight: "600" }}>
+                            Rs.{item.price} 
+                            <Badge
+                              variant="primary"
+                              className={`float-end me-2
+                                ${item.status == "available"
+                                  ? `bg-primary`
+                                  : `bg-danger`
+                              }`}
+                            >
+                              {item.status}
+                            </Badge>
+                          </p>
+                          {/* <p className="ms-3">
+                            <strong>Status:</strong>
+                            <Badge
+                              variant="primary"
+                              className={
+                                item.status == "available"
+                                  ? `bg-primary`
+                                  : `bg-danger`
+                              }
+                            >
+                              {item.status}
+                            </Badge>
+                          </p> */}
+                          <span>
+                            <Form.Check
+                              type="switch"
+                              id="custom-switch"
+                              label="car for rent"
+                              onChange={(e) => onChangeHandler(e, item.id)}
+                              className="ms-3"
+                              checked={
+                                item.car_for_rent === "yes" ? true : null
+                              }
+                            />
+                          </span>
+                        </Card.Text>
+                        <Card.Footer className="text-bg-dark">
+                          <Button
+                            className="text-bg-primary viewBtn"
+                            onClick={() => navigate(`/car-view/${item.id}`)}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            className="text-bg-danger btn-danger deleteBtn"
+                            onClick={() => deleteConfirmation(item.id)}
+                          >
+                            Delete
+                          </Button>
+                        </Card.Footer>
+                      </Card>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center">
+                    <img
+                      src={notFoundImg}
+                      width="60%"
+                      height="60%"
+                      className="d-inline-block align-top"
+                      alt="R"
+                    />
                   </div>
-                ))
-              ) : (
-                <div className="text-center">
-                  <img
-                    src={notFoundImg}
-                    width="60%"
-                    height="60%"
-                    className="d-inline-block align-top"
-                    alt="R"
-                  />
-                </div>
-              )}
-            </Row>
+                )}
+              </Row>
+            ) : cars && carOnRentList && customerList ? (
+              <CarOnRent
+                carRent={carOnRentList}
+                cars={cars}
+                customers={customerList}
+                reloadCarList={getCars}
+              />
+            ) : (
+              <div className="text-center">
+                <img
+                  src={notFoundImg}
+                  width="60%"
+                  height="60%"
+                  className="d-inline-block align-top"
+                  alt="R"
+                />
+              </div>
+            )}
           </Col>
         </Row>
       </div>
-      {cars && carOnRentList && customerList && (
-        <CarOnRent
-          carRent={carOnRentList}
-          cars={cars}
-          customers={customerList}
-        />
-      )}
     </>
   );
 }

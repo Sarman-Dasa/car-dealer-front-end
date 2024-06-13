@@ -1,16 +1,46 @@
 .user-profile {
   padding: 10px;
 }
-.user-profile .profile-card .row {
-  width: 300px;
-  height: 400px;
-}
 .user-profile .profile-card .file-upload {
   border: 2px solid #595b5c;
   border-radius: 20px;
 }
 .user-profile .car-detail {
-  max-height: calc(100vh - 200px);
   overflow-y: auto;
   overflow-x: hidden;
+  max-height: calc(100vh - 100px);
+}
+.user-profile .car-detail::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+  background-color: transparent;
+}
+.user-profile .car-detail::-webkit-scrollbar::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px transparent;
+  background-color: transparent;
+  border-radius: 5px;
+}
+.user-profile .car-detail::-webkit-scrollbar-thumb {
+  box-shadow: inset 0 0 5px transparent;
+  border-radius: 5px;
+  background-color: #595b5c;
+}
+.user-profile .car-detail .card-custome {
+  width: "18rem";
+  height: "500px";
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+  transition: box-shadow 0.3s ease-in-out;
+}
+.user-profile .car-detail .card-custome .card-footer .viewBtn {
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+.user-profile .car-detail .card-custome .card-footer .deleteBtn {
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+}
+.user-profile .car-detail .card-custome:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }/*# sourceMappingURL=profile.css.map */

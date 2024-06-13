@@ -41,13 +41,11 @@ export default function CarDetail() {
     owner_id: null,
     customer_id: userInfo.id,
     no_of_day: null,
+    per_day_rent:null,
     rent: null,
     car_id: id,
     pickup_location: {},
   });
-
-  // const [startDate,setStartDate] = useState(currentDate);
-  // const [endDate,setEndDate] = useState(currentDate);
 
   // Get specific car detail
   const getCarDetail = async () => {
@@ -159,6 +157,7 @@ export default function CarDetail() {
         updateDoc(carDoc, { status: "onRent" }) // Update car status as onRent
           .then(() => {
             toast.success("Your car is booked");
+            getCarDetail();
             setShowModal(false);
           })
           .catch((err) => {
@@ -187,24 +186,26 @@ export default function CarDetail() {
 
   // Set No of day & rent
   useEffect(() => {
+    console.log("call on loading...");
     let startDate = moment(carRentDetail.startDate);
     let endDate = moment(carRentDetail.endDate);
-
+    console.log("car", car);
     // Check if endDate is less than startDate
     if (endDate.isBefore(startDate)) {
       toast.warning("Please Select valid end date!");
     } else {
       let dayDifference = endDate.diff(startDate, "days") + 1;
-      const PER_DAY_RENT = 500;
+      const PER_DAY_RENT = car && car.per_day_rent;
       const totalRent = PER_DAY_RENT * dayDifference;
       setCarRentDetail((preview) => ({
         ...preview,
         no_of_day: dayDifference,
+        per_day_rent: PER_DAY_RENT,
         rent: totalRent,
       }));
       // console.log("Number of days:", totalRent);
     }
-  }, [carRentDetail.startDate, carRentDetail.endDate]);
+  }, [carRentDetail.startDate, carRentDetail.endDate, car]);
 
   return (
     <div>
@@ -259,6 +260,7 @@ export default function CarDetail() {
                 {/* Buy & rent Button start */}
                 {!car.seller_id &&
                   car.owner_id !== userInfo.id &&
+                  car.status !== "onRent" &&
                   (isCarForRent ? (
                     <Button onClick={() => setShowModal(true)}>
                       Get Car For Rent

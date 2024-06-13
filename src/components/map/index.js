@@ -16,7 +16,7 @@ export default function GoogleMap({ getUserLocation }) {
       <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
         <Map
           defaultZoom={12}
-          center={{ lat: 23.193047405903453, lng: 72.61577348844713 }}
+          center={location}
           onClick={handleMarkerClick}
         >
           <Marker position={location} />

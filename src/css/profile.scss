@@ -1,11 +1,6 @@
 .user-profile {
   padding: 10px;
   .profile-card {
-    .row {
-      width: 300px;
-      height: 400px;
-    }
-
     .file-upload {
       border: 2px solid #595b5c;
       border-radius: 20px;
@@ -13,9 +8,49 @@
   }
 
   .car-detail {
-    max-height: calc(100vh - 200px);
-    // border: 1px solid #ccc;
     overflow-y: auto;
     overflow-x: hidden;
+    max-height: calc(100vh - 100px);
+    &::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+      background-color: transparent;
+
+      &::-webkit-scrollbar-track {
+        box-shadow: inset 0 0 5px transparent;
+        background-color: transparent;
+        border-radius: 5px;
+      }
+    }
+    &::-webkit-scrollbar-thumb {
+      box-shadow: inset 0 0 5px transparent;
+      border-radius: 5px;
+      background-color: #595b5c;
+    }
+
+    .card-custome {
+      width: "18rem";
+      height: "500px";
+      // padding: 20px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+      transition: box-shadow 0.3s ease-in-out;
+
+      .card-footer {
+        .viewBtn {
+          border-top-right-radius: 0px;
+          border-bottom-right-radius: 0px;
+        }
+        .deleteBtn {
+          border-top-left-radius: 0px;
+          border-bottom-left-radius: 0px;
+        }
+      }
+    }
+
+    .card-custome:hover {
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
   }
 }

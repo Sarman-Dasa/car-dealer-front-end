@@ -15,10 +15,10 @@ function VerticalLayout() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const logOut =  async () => {
-  navigate('/sign-in', { replace: true });
-   let response =  await signOut(auth);
-   console.log('response: ', response);
+  const logOut = async () => {
+    navigate("/sign-in", { replace: true });
+    let response = await signOut(auth);
+    console.log("response: ", response);
     dispatch(userLogOut());
     localStorage.removeItem("user");
     // navigate('/sign-in', { replace: true });
@@ -30,14 +30,17 @@ function VerticalLayout() {
         <Link to="/" className="navbar-brand">
           <FaCar />
         </Link>
+        <Link to="/" className="nav-link">
+          Home
+        </Link>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
-            <Link to="/" className="nav-link">
-              Home
-            </Link>
             {userInfo && (
               <>
+                <Link to="/cars" className="nav-link">
+                  Cars
+                </Link>
                 <Link to="add-car" className="nav-link">
                   Add Car
                 </Link>

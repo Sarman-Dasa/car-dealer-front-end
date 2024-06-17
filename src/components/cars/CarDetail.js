@@ -1,4 +1,13 @@
-import { addDoc, collection, doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -21,6 +30,8 @@ import {
 } from "react-bootstrap";
 import moment from "moment";
 import { ToastContainer, toast } from "react-toastify";
+import { Slide } from "react-slideshow-image";
+import { FaAnglesLeft, FaAnglesRight } from "react-icons/fa6";
 
 export default function CarDetail() {
   const [car, setCar] = useState();
@@ -31,6 +42,7 @@ export default function CarDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isCarForRent, setIsCarForRent] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [carAttachments, setCarAttachments] = useState();
   const type = searchParams.get("type");
   const currentDate = moment().format("YYYY-MM-DD");
   const MySwal = withReactContent(Swal);
@@ -41,7 +53,7 @@ export default function CarDetail() {
     owner_id: null,
     customer_id: userInfo.id,
     no_of_day: null,
-    per_day_rent:null,
+    per_day_rent: null,
     rent: null,
     car_id: id,
     pickup_location: {},
@@ -62,7 +74,7 @@ export default function CarDetail() {
     }));
 
     setCar(carDetail);
-
+    // getCarattachments();
     getCarOwnerDetail(carDetail.owner_id);
     if (carDetail.seller_id) {
       getSellerUserDetail(carDetail.seller_id);
@@ -177,12 +189,36 @@ export default function CarDetail() {
       pickup_location: e,
     }));
   };
+
+
+
   useEffect(() => {
     getCarDetail();
     if (searchParams && type === "car_for_rent") {
       setIsCarForRent(true);
     }
   }, []);
+
+  useEffect(() => {
+    async function getCarattachments() {
+      const carCollection = collection(db, "car_attachments");
+  
+      const q = query(carCollection, where("car_id", "==", id));
+      const response = await getDocs(q);
+      const attachments = response.docs.map((item) => ({
+        ...item.data(),
+        id: item.id,
+      }));
+  
+      attachments.push({
+        url: car && car.image_url,
+      });
+
+      console.log("attachments",attachments);
+      setCarAttachments(attachments);
+    }
+    getCarattachments();
+  },[id,car])
 
   // Set No of day & rent
   useEffect(() => {
@@ -207,6 +243,32 @@ export default function CarDetail() {
     }
   }, [carRentDetail.startDate, carRentDetail.endDate, car]);
 
+    // css code start
+
+    const spanStyle = {
+      padding: '20px',
+      background: 'transmission',
+      color: '#000000',
+      fontSize:'24px',
+      fontWeight:600,
+    };
+    
+    const properties = {
+        prevArrow: <FaAnglesLeft className='text-primary'/>,
+        nextArrow: <FaAnglesRight className='text-primary'/>
+    }
+    
+    const divStyle = {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundSize: 'cover', 
+      backgroundPosition: 'center', 
+      backgroundRepeat: 'no-repeat',
+      height: '300px'
+    };
+  // css code end
+
   return (
     <div>
       <Button className="ms-5" onClick={() => navigate(-1)}>
@@ -226,7 +288,22 @@ export default function CarDetail() {
           <>
             <Row>
               <Col md={6}>
-                {car.image_url && <Image src={car.image_url} fluid />}
+                <div className="slide-container" >
+                  <Slide {...properties}>
+                    {carAttachments && carAttachments.map((slideImage, index) => (
+                      <div key={index}>
+                        <div
+                          style={{
+                            ...divStyle,
+                            backgroundImage: `url(${slideImage.url})`,
+                          }}
+                        >
+                          <span style={spanStyle}>{slideImage.caption}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </Slide>
+                </div>
               </Col>
               <Col md={3}>
                 <h2>{car.company_name}</h2>

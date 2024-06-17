@@ -10,12 +10,13 @@ import {
   where,
   updateDoc,
   deleteDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { FaEdit } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
 import FileUpload from "../fileUpload";
 import { v4 as uuid } from "uuid";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { setLoginUserData } from "../../store/app";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -23,6 +24,7 @@ import withReactContent from "sweetalert2-react-content";
 import CarOnRent from "../cars/CarOnRent";
 import AddDum from "../../data/AddDum";
 import notFoundImg from "../../image/not-found.jpg";
+import { toast } from "react-toastify";
 export default function Profile() {
   const MySwal = withReactContent(Swal);
   const userInfo = useSelector((state) => state.app.user);
@@ -37,16 +39,24 @@ export default function Profile() {
   const navigate = useNavigate();
   // Upload User profile image
   const uploadImage = (e) => {
-    const imageRef = ref(storage, `user/${uuid()}`);
+    const id = uuid();
+    const imageRef = ref(storage, `images/${id}`);
     // Upload Image to firebase storege
     uploadBytes(imageRef, e[0].image)
       .then((response) => {
-        //console.log("response", response);
+        console.log("response", response);
         // Get the download URL
         getDownloadURL(imageRef)
-          .then((url) => {
+          .then(async (url) => {
             //console.log("File available at", url);
-            updateUserProfileImage(url);
+            //Delete old image for firebase storege 
+            const imageRef = ref(storage, `images/${userInfo.avatar_id}`);
+            await deleteObject(imageRef).then((result) => {
+              console.log('result: ', result);
+            }).catch((err) => {
+              console.log('err: ', err);
+            });
+            updateUserProfileImage(url,id); // update user data
           })
           .catch((error) => {
             //console.log("Error getting download URL", error);
@@ -57,14 +67,15 @@ export default function Profile() {
       });
   };
 
-  function updateUserProfileImage(url) {
+  function updateUserProfileImage(url,id) {
     // Update User Profile Image to set url
     const userRef = doc(db, "users", userInfo.id);
-    updateDoc(userRef, { avatar: url })
+    updateDoc(userRef, { avatar: url,avatar_id:id })
       .then(() => {
         const user = {
           ...userInfo,
           avatar: url,
+          avatar_id:id,
         };
         dispatch(setLoginUserData(user));
         localStorage.setItem("user", JSON.stringify(user));
@@ -144,8 +155,25 @@ export default function Profile() {
   async function deleteCar(id) {
     //console.log("carDoc: ", id);
     const carDoc = doc(db, "cars", id);
+    const carAttachmentsColleaction = collection(db,'car_attachments');
+    const q = query(carAttachmentsColleaction,where('car_id','==',id));
+    
+    const response = await getDocs(q);
+    console.log('response: ', response);
+    const batch = writeBatch(db);
+    console.log('batch: ', batch);
+
+    response.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    // Commit the batch
+    await batch.commit();
+
     await deleteDoc(carDoc)
       .then((response) => {
+        getCars();
+        toast.success("Car Deleted Successfully")
         //console.log("Response", response);
       })
       .catch((error) => {
@@ -240,6 +268,7 @@ export default function Profile() {
     getStatusWiseCount(cars);
     setCars(cars);
   };
+
   useEffect(() => {
     getCars();
     getCarOnRentDetail();
@@ -249,10 +278,13 @@ export default function Profile() {
   return (
     <>
       {showUpload && (
-        <FileUpload
-          handelFileUpload={uploadImage}
-          title="Upload Profile Image"
-        />
+        <div className="" style={{maxWidth:"400px"}}>
+          <FileUpload
+            handelFileUpload={uploadImage}
+            title="Upload Profile Image"
+            showFooter={true}
+          />
+        </div>
       )}
       <div>
         <Row className="user-profile g-0">
@@ -376,31 +408,19 @@ export default function Profile() {
                         </Card.Body>
                         <Card.Text>
                           <p className="ms-3" style={{ fontWeight: "600" }}>
-                            Rs.{item.price} 
+                            Rs.{item.price}
                             <Badge
                               variant="primary"
                               className={`float-end me-2
-                                ${item.status == "available"
-                                  ? `bg-primary`
-                                  : `bg-danger`
-                              }`}
+                                ${
+                                  item.status == "available"
+                                    ? `bg-primary`
+                                    : `bg-danger`
+                                }`}
                             >
                               {item.status}
                             </Badge>
                           </p>
-                          {/* <p className="ms-3">
-                            <strong>Status:</strong>
-                            <Badge
-                              variant="primary"
-                              className={
-                                item.status == "available"
-                                  ? `bg-primary`
-                                  : `bg-danger`
-                              }
-                            >
-                              {item.status}
-                            </Badge>
-                          </p> */}
                           <span>
                             <Form.Check
                               type="switch"

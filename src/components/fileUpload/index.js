@@ -12,13 +12,16 @@ export default function FileUpload({
   title,
   file = [],
   isMultiple = false,
+  isInvalid = false,
+  showFooter = false,
+  errorMessage,
 }) {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const fileRef = useRef();
   const uploadFile = () => {
     fileRef.current.click();
   };
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const newFiles = Array.from(files)
@@ -31,7 +34,7 @@ export default function FileUpload({
         .map((file) => ({
           id: uuid(),
           url: URL.createObjectURL(file),
-          name:file.name,
+          name: file.name,
           image: file, // Include the actual file object if needed
         }));
       if (isMultiple) {
@@ -49,14 +52,11 @@ export default function FileUpload({
   //Remove File
   const removeImage = (id) => {
     let index = selectedFiles.findIndex((item) => item.id === id);
-    // console.log('index: ', index);
     let updatedFiles = [...selectedFiles];
     let file = updatedFiles.splice(index, 1);
-    // console.log('file: ', file);
-    console.log('removed file: ', file);
+
     handelFileRemove(file);
     setSelectedFiles(updatedFiles);
-
   };
 
   useEffect(() => {
@@ -64,13 +64,22 @@ export default function FileUpload({
       setSelectedFiles([]);
     });
 
-    if(file) {
+    if (file) {
       setSelectedFiles(file);
     }
     return () => {
       Emitter.off("CLEAR_FILE_DATA");
     };
   }, []);
+
+  useEffect(() => {
+    if (!showFooter && selectedFiles.length > 0) {
+      console.log("Selected files:", selectedFiles);
+      handelFileUpload(selectedFiles);
+    }
+
+
+  }, [selectedFiles, showFooter]);
 
   return (
     <Container className="custome-file-upload">
@@ -91,15 +100,21 @@ export default function FileUpload({
                 <img src={uploadImage} alt="not found" />
                 <p>Browse file to upload </p>
               </div>
+              {isInvalid && (
+                <span className="text-danger"> {errorMessage} </span>
+              )}
             </Card.Body>
-            <Card.Footer className="text-muted">
-              <button onClick={handleSaveButtonClick} type="button" className="btn btn-primary">
+           {showFooter && <Card.Footer className="text-muted">
+              <button
+                onClick={handleSaveButtonClick}
+                type="button"
+                className="btn btn-primary"
+              >
                 Upload
               </button>
-            </Card.Footer>
+            </Card.Footer>}
           </Card>
         </Col>
-        {  console.log("selected",selectedFiles)}
         {selectedFiles.map((file, index) => (
           <div key={index} className="col-md-3 my-2">
             <Card style={{ width: "18rem", height: "100%" }}>
@@ -112,7 +127,9 @@ export default function FileUpload({
                 <Card.Title>{file.name}</Card.Title>
               </Card.Body>
               <Card.Footer className="text-muted">
-                <button type="button" onClick={() => removeImage(file.id)}>Delete</button>
+                <button type="button" onClick={() => removeImage(file.id)}>
+                  Delete
+                </button>
               </Card.Footer>
             </Card>
           </div>

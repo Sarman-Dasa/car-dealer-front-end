@@ -17,13 +17,15 @@ import { TbSquareRoundedChevronsDownFilled } from "react-icons/tb";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { db } from "../firebase/Firebase";
+import imageNotFound from "../../image/not-found.jpg";
 
-export default function CarOnRent({ carRent, cars, customers,reloadCarList }) {
-
+export default function CarOnRent({ carRent, cars, customers, reloadCarList }) {
   const [openItem, setOpenItem] = useState({});
   // const [oldCarRentIds,setOldCarRentsIds] = useState();
-  const [carRentFilter,setCarRentFilter] = useState('current');
-  const [carForRent, setCarForRent] = useState(cars.filter((item) => item.status === "onRent"));
+  const [carRentFilter, setCarRentFilter] = useState("current");
+  const [carForRent, setCarForRent] = useState(
+    cars.filter((item) => item.status === "onRent")
+  );
   const MySwal = withReactContent(Swal);
 
   const mapCustomerAndCarOnRentData = useMemo(() => {
@@ -52,7 +54,7 @@ export default function CarOnRent({ carRent, cars, customers,reloadCarList }) {
     return items;
   }, [carForRent, mapCustomerAndCarOnRentData]);
 
-  // Toggle car detail collepase 
+  // Toggle car detail collepase
   const collapaseToggle = (index) => {
     setOpenItem((prevState) => ({
       ...prevState,
@@ -90,155 +92,182 @@ export default function CarOnRent({ carRent, cars, customers,reloadCarList }) {
       }
     });
   };
-  
+
   async function updateCarStatus(id) {
     console.log(id);
-      const carDoc = doc(db,'cars',id);
-      await updateDoc(carDoc,{status:'available'}).then(() => {
+    const carDoc = doc(db, "cars", id);
+    await updateDoc(carDoc, { status: "available" })
+      .then(() => {
         toast.success("Data updated");
         reloadCarList();
-      }).catch((err) => {
-         toast.error(err);
+      })
+      .catch((err) => {
+        toast.error(err);
       });
   }
 
   useEffect(() => {
-      if(carRentFilter === 'current') {
-        const carForRent = cars.filter((item) => item.status === "onRent");
-        setCarForRent(carForRent);
-      }
-      else if(carRentFilter === 'preview') {
-        const carIds = carRent.map((obj) => obj.car_id);
-        const carForRent = cars.filter((item) => carIds.includes(item.id) && item.status !== "onRent");
-        setCarForRent(carForRent);
-      }
-  },[carRent, carRentFilter, cars]);
+    if (carRentFilter === "current") {
+      const carForRent = cars.filter((item) => item.status === "onRent");
+      setCarForRent(carForRent);
+    } else if (carRentFilter === "preview") {
+      const carIds = carRent.map((obj) => obj.car_id);
+      const carForRent = cars.filter(
+        (item) => carIds.includes(item.id) && item.status !== "onRent"
+      );
+      setCarForRent(carForRent);
+    }
+  }, [carRent, carRentFilter, cars]);
 
   return (
     <>
-    <div className="float-end mb-5 me-2">
-      <Button onClick={() => setCarRentFilter('current')}>Show current car on rent detail </Button>
-      <Button  onClick={() => setCarRentFilter('preview')} className="ms-3">Show past car on rent detail </Button>
-    </div>
-    <Table>
-      <thead>
-        <tr>
-          <th>Image</th>
-          <th>Company Name</th>
-          <th>Model</th>
-          <th>Number</th>
-          { carRentFilter === 'current' &&  <th>Action</th> }
-        </tr>
-      </thead>
-      <tbody>
-        {detail &&
-          detail.map((item, index) => (
-            <>
-              <tr key={index} style={{ cursor: "pointer" }}>
-                <td>
-                  <span className="me-2" onClick={() => collapaseToggle(index)}>
-                    {openItem[index] ? (
-                      <TbSquareRoundedChevronsDownFilled
-                        className="text-primary"
-                        size={18}
-                      />
-                    ) : (
-                      <TbSquareRoundedChevronsRightFilled
-                        className="text-primary"
-                        size={18}
-                      />
-                    )}
-                  </span>
-                  <Image
-                    src={item.image_url}
-                    thumbnail
-                    height="100px"
-                    width="100px"
-                    className="border-0"
-                  />
-                </td>
-                <td>{item.company_name}</td>
-                <td>{item.model}</td>
-                <td>{item.number}</td>
-                 {
-                 carRentFilter === 'current' && <td className="text-start">
-                  <OverlayTrigger
-                    placement="top"
-                    overlay={<Tooltip id="tooltip-disabled">Update Status</Tooltip>}
-                  >
-                    <Button
-                      className="btn bg-transparent border-0"
-                      onClick={() => updateCarStatusConfirmation(item.id)}
+      <div className="float-end mb-5 me-2">
+        <Button onClick={() => setCarRentFilter("current")}>
+          Show current car on rent detail{" "}
+        </Button>
+        <Button onClick={() => setCarRentFilter("preview")} className="ms-3">
+          Show past car on rent detail{" "}
+        </Button>
+      </div>
+      {detail && detail.length ? (
+        <Table>
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Company Name</th>
+              <th>Model</th>
+              <th>Number</th>
+              {carRentFilter === "current" && <th>Action</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {detail.map((item, index) => (
+              <>
+                <tr key={index} style={{ cursor: "pointer" }}>
+                  <td>
+                    <span
+                      className="me-2"
+                      onClick={() => collapaseToggle(index)}
                     >
-                      <FaEdit className="text-primary" />
-                    </Button>
-                  </OverlayTrigger>
-                </td>
-                 }
-              </tr>
-              <tr>
-                <td colSpan="5" className="p-0">
-                  <Collapse in={openItem[index]}>
-                    <div id={`collapse-${index}`}>
-                      {item.carRentDetail && item.carRentDetail.length > 0 && (
-                        <Table bordered>
-                          <thead>
-                            <tr>
-                              <th>Image</th>
-                              <th>Name</th>
-                              <th>Email</th>
-                              <th>Phone</th>
-                              <th>Start Date</th>
-                              <th>End Date</th>
-                              <th>Days</th>
-                              <th>Per Day Rent</th>
-                              <th>Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {item.carRentDetail.map((detail, inx) => (
-                              <tr key={inx}>
-                                <td>
-                                  <Image
-                                    src={detail.customerDetail.avatar}
-                                    thumbnail
-                                    height="100px"
-                                    width="100px"
-                                  />
-                                </td>
-                                <td>{detail.customerDetail.full_name}</td>
-                                <td>{detail.customerDetail.email}</td>
-                                <td>{detail.customerDetail.phone}</td>
-                                <td>{detail.startDate}</td>
-                                <td>
-                                  <Badge
-                                    variant="primary"
-                                    className={
-                                      endDateFilter(detail.endDate, item.status)
-                                        ? `bg-danger`
-                                        : `bg-primary`
-                                    }
-                                  >
-                                    {detail.endDate}
-                                  </Badge>
-                                </td>
-                                <td>{detail.no_of_day}</td>
-                                <td>{detail.per_day_rent}</td>
-                                <td>{detail.rent}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
+                      {openItem[index] ? (
+                        <TbSquareRoundedChevronsDownFilled
+                          className="text-primary"
+                          size={18}
+                        />
+                      ) : (
+                        <TbSquareRoundedChevronsRightFilled
+                          className="text-primary"
+                          size={18}
+                        />
                       )}
-                    </div>
-                  </Collapse>
-                </td>
-              </tr>
-            </>
-          ))}
-      </tbody>
-      <ToastContainer />
-    </Table>
+                    </span>
+                    <Image
+                      src={item.image_url}
+                      thumbnail
+                      height="100px"
+                      width="100px"
+                      className="border-0"
+                    />
+                  </td>
+                  <td>{item.company_name}</td>
+                  <td>{item.model}</td>
+                  <td>{item.number}</td>
+                  {carRentFilter === "current" && (
+                    <td className="text-start">
+                      <OverlayTrigger
+                        placement="top"
+                        overlay={
+                          <Tooltip id="tooltip-disabled">Update Status</Tooltip>
+                        }
+                      >
+                        <Button
+                          className="btn bg-transparent border-0"
+                          onClick={() => updateCarStatusConfirmation(item.id)}
+                        >
+                          <FaEdit className="text-primary" />
+                        </Button>
+                      </OverlayTrigger>
+                    </td>
+                  )}
+                </tr>
+                <tr>
+                  <td colSpan="5" className="p-0">
+                    <Collapse in={openItem[index]}>
+                      <div id={`collapse-${index}`}>
+                        {item.carRentDetail &&
+                          item.carRentDetail.length > 0 && (
+                            <Table bordered>
+                              <thead>
+                                <tr>
+                                  <th>Image</th>
+                                  <th>Name</th>
+                                  <th>Email</th>
+                                  <th>Phone</th>
+                                  <th>Start Date</th>
+                                  <th>End Date</th>
+                                  <th>Days</th>
+                                  <th>Per Day Rent</th>
+                                  <th>Total</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {item.carRentDetail.map((detail, inx) => (
+                                  <tr key={inx}>
+                                    <td>
+                                      <Image
+                                        src={detail.customerDetail.avatar}
+                                        thumbnail
+                                        height="100px"
+                                        width="100px"
+                                      />
+                                    </td>
+                                    <td>{detail.customerDetail.full_name}</td>
+                                    <td>{detail.customerDetail.email}</td>
+                                    <td>{detail.customerDetail.phone}</td>
+                                    <td>{detail.startDate}</td>
+                                    <td>
+                                      <Badge
+                                        variant="primary"
+                                        className={
+                                          endDateFilter(
+                                            detail.endDate,
+                                            item.status
+                                          )
+                                            ? `bg-danger`
+                                            : `bg-primary`
+                                        }
+                                      >
+                                        {detail.endDate}
+                                      </Badge>
+                                    </td>
+                                    <td>{detail.no_of_day}</td>
+                                    <td>{detail.per_day_rent}</td>
+                                    <td>{detail.rent}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </Table>
+                          )}
+                      </div>
+                    </Collapse>
+                  </td>
+                </tr>
+              </>
+            ))}
+          </tbody>
+          <ToastContainer />
+        </Table>
+      ) : (
+        <div className="text-center mt-5">
+          <img
+            src={imageNotFound}
+            width="60%"
+            height="60%"
+            className="d-inline-block align-top"
+            alt="R"
+          />
+        </div>
+      )}
     </>
   );
 }

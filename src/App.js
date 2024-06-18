@@ -2,6 +2,8 @@ import "./App.css";
 import RouterView from "./router/RouterView";
 import { useDispatch } from "react-redux";
 import { setLoginUserData } from "./store/app";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const dispatch = useDispatch();
@@ -12,6 +14,7 @@ function App() {
 
   return (
     <div className="App">
+      <ToastContainer />
       <RouterView />
     </div>
   );

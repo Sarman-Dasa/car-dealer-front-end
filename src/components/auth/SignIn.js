@@ -1,4 +1,3 @@
-// src/SignIn.js
 import React, { useState } from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "../../css/auth.css";
@@ -8,15 +7,36 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setLoginUserData } from "../../store/app";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import PasswordField from "./PasswordField.js";
 
 export default function SignIn() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // const [email, setEmail] = useState("");
+  // const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+
+  // form validation
+  const validationSchema = Yup.object({
+    email: Yup.string().required(),
+    password: Yup.string().required(),
+  });
+
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validationSchema: validationSchema,
+    onSubmit: (values) => {
+      // console.log("call sign in");
+      handleSubmit();
+    },
+  });
+
+  const { email, password } = formik.values;
+  const handleSubmit = async () => {
     await signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         //  const user = userCredential.user.email;
@@ -54,27 +74,42 @@ export default function SignIn() {
         <Col md={12}>
           <div className="signin-card">
             <h2 className="text-center">Sign In</h2>
-            <Form onSubmit={handleSubmit}>
+            <Form noValidate onSubmit={formik.handleSubmit}>
               <Form.Group controlId="formBasicEmail">
                 <Form.Label>Email</Form.Label>
                 <Form.Control
                   type="email"
+                  name="email"
                   placeholder="Enter email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  isInvalid={formik.touched.email && !!formik.errors.email}
                 />
+                <Form.Control.Feedback type="invalid">
+                  {formik.errors.email}
+                </Form.Control.Feedback>
               </Form.Group>
 
-              <Form.Group controlId="formBasicPassword">
+              <PasswordField
+                formik={formik}
+                label={"password"}
+                name={"password"}
+              />
+              {/* <Form.Group controlId="formBasicPassword">
                 <Form.Label>Password</Form.Label>
                 <Form.Control
                   type="password"
                   placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  isInvalid={formik.touched.password && !!formik.errors.password}
                 />
-              </Form.Group>
+                <Form.Control.Feedback type="invalid">
+                  {formik.errors.password}
+                </Form.Control.Feedback>
+              </Form.Group> */}
 
               <Button variant="primary" type="submit" className="w-100 mt-4">
                 Sign In

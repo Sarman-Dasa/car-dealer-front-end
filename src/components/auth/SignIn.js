@@ -1,19 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "../../css/auth.css";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase/Firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setLoginUserData } from "../../store/app";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import PasswordField from "./PasswordField.js";
+import notify from "../../services/notify.js";
 
 export default function SignIn() {
-  // const [email, setEmail] = useState("");
-  // const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -44,6 +43,7 @@ export default function SignIn() {
         // navigate("/")
       })
       .catch((error) => {
+        notify.error("Email & password does not match");
         const errorCode = error.code;
         const errorMessage = error.message;
         console.log(errorCode, errorMessage);
@@ -96,24 +96,13 @@ export default function SignIn() {
                 label={"password"}
                 name={"password"}
               />
-              {/* <Form.Group controlId="formBasicPassword">
-                <Form.Label>Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  placeholder="Password"
-                  value={formik.values.password}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  isInvalid={formik.touched.password && !!formik.errors.password}
-                />
-                <Form.Control.Feedback type="invalid">
-                  {formik.errors.password}
-                </Form.Control.Feedback>
-              </Form.Group> */}
 
               <Button variant="primary" type="submit" className="w-100 mt-4">
                 Sign In
               </Button>
+              <Form.Label className="float-end mt-1">
+                Forgot password<Link to="/forgot-password">click here</Link>
+              </Form.Label>
             </Form>
           </div>
         </Col>

@@ -1,36 +1,17 @@
-import React, { useState } from "react";
+import React from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "../../css/auth.css";
 import { toast, ToastContainer } from "react-toastify";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase/Firebase";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { addDoc, collection } from "firebase/firestore";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import PasswordField from "./PasswordField";
 
 export default function SignUp() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [city, setCity] = useState("");
-
-  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-
-    if (password !== confirmPassword) {
-      console.log("call not match");
-      toast.error("Password does not match!");
-    } else {
-      alert("call");
-      // register();
-    }
-  };
 
   async function register() {
     const { email, password } = formik.values;
@@ -45,7 +26,6 @@ export default function SignUp() {
         const errorMessage = error.message;
         toast.error(errorMessage);
         console.log(errorCode, errorMessage);
-        // ..
       });
   }
 
@@ -94,7 +74,6 @@ export default function SignUp() {
     },
     validationSchema: validationSchema,
     onSubmit: (values) => {
-      // console.log("values: ", values);
       register();
     },
   });
@@ -171,32 +150,6 @@ export default function SignUp() {
                 </Form.Control.Feedback>
               </Form.Group>
 
-              {/* <Form.Group controlId="password">
-                <Form.Label>Password</Form.Label>
-                <InputGroup>
-                  <Form.Control
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    name="password"
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    isInvalid={
-                      formik.touched.password && !!formik.errors.password
-                    }
-                  />
-                  <InputGroup.Text
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {showPassword ? <FaEyeSlash /> : <FaEye />}
-                  </InputGroup.Text>
-                  <Form.Control.Feedback type="invalid">
-                    {formik.errors.password}
-                  </Form.Control.Feedback>
-                </InputGroup>
-              </Form.Group> */}
-
               <PasswordField
                 formik={formik}
                 label={"password"}
@@ -208,27 +161,12 @@ export default function SignUp() {
                 name={"confirmPassword"}
               />
 
-              {/* <Form.Group controlId="confirmPassword">
-                <Form.Label>Confirm Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="Confirm Password"
-                  value={formik.values.confirmPassword}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  isInvalid={
-                    formik.touched.confirmPassword &&
-                    !!formik.errors.confirmPassword
-                  }
-                />
-                <Form.Control.Feedback type="invalid">
-                  {formik.errors.confirmPassword}
-                </Form.Control.Feedback>
-              </Form.Group> */}
               <Button variant="primary" type="submit" className="w-100 mt-4">
                 Sign Up
               </Button>
+              <Form.Label className="float-end mt-1">
+                already have an account<Link to="/sign-in">Sign In here</Link>
+              </Form.Label>
             </Form>
           </div>
         </Col>

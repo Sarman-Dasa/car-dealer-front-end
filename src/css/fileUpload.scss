@@ -1,6 +1,23 @@
 .custome-file-upload {
-.file-input {
+  .file-input {
     display: none;
+  }
+
+  .image-container {
+    position: relative;
+
+    .deleteBtn {
+      border-radius: 0px;
+      display: none;
+    }
+
+    &:hover button {
+      display: block;
+      position: "absolute";
+      top: "25%";
+      width: "100%";
+      transform: "translate(-50%, -50%)";
+    }
   }
 
   button {
@@ -12,11 +29,11 @@
     border-radius: 5px;
     cursor: pointer;
   }
-  
+
   button:hover {
     background-color: #dc3545;
   }
-  
+
   .file-upload {
     border: 2px dashed #595b5c;
     border-radius: 20px;
@@ -31,8 +48,8 @@
     }
     p {
       position: absolute;
-      top:70%;
-      left:20%;
+      top: 70%;
+      left: 20%;
     }
   }
 }

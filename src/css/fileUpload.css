@@ -1,6 +1,20 @@
 .custome-file-upload .file-input {
   display: none;
 }
+.custome-file-upload .image-container {
+  position: relative;
+}
+.custome-file-upload .image-container .deleteBtn {
+  border-radius: 0px;
+  display: none;
+}
+.custome-file-upload .image-container:hover button {
+  display: block;
+  position: "absolute";
+  top: "25%";
+  width: "100%";
+  transform: "translate(-50%, -50%)";
+}
 .custome-file-upload button {
   margin-top: 10px;
   padding: 10px 20px;

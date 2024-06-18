@@ -16,12 +16,12 @@ function VerticalLayout() {
   const navigate = useNavigate();
 
   const logOut = async () => {
+    await signOut(auth);
     navigate("/sign-in", { replace: true });
-    let response = await signOut(auth);
-    console.log("response: ", response);
-    dispatch(userLogOut());
-    localStorage.removeItem("user");
-    // navigate('/sign-in', { replace: true });
+    setTimeout(() => {
+      dispatch(userLogOut());
+      localStorage.removeItem("user");
+    }, 200);
   };
 
   return (
@@ -62,7 +62,7 @@ function VerticalLayout() {
             ) : (
               <div>
                 <p className="d-inline">
-                  Signed in as: <b>{userInfo.full_name}</b>{" "}
+                  Signed in as: <b>{userInfo.full_name}</b>
                   <Link to="/profile">
                     <ImProfile color="#166EFD" />
                   </Link>

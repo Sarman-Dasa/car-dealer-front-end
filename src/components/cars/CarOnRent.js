@@ -123,10 +123,10 @@ export default function CarOnRent({ carRent, cars, customers, reloadCarList }) {
     <>
       <div className="float-end mb-5 me-2">
         <Button onClick={() => setCarRentFilter("current")}>
-          Show current car on rent detail{" "}
+          Show current car on rent detail
         </Button>
         <Button onClick={() => setCarRentFilter("preview")} className="ms-3">
-          Show past car on rent detail{" "}
+          Show past car on rent detail
         </Button>
       </div>
       {detail && detail.length ? (

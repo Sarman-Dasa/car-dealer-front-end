@@ -4,6 +4,7 @@ import "../../css/fileUpload.css";
 import uploadImage from "../../image/file-upload.png";
 import { v4 as uuid } from "uuid";
 import Emitter from "../../services/emitter";
+import notify from "../../services/notify";
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB limit
 
 export default function FileUpload({
@@ -27,6 +28,7 @@ export default function FileUpload({
       const newFiles = Array.from(files)
         .filter((file) => {
           if (file.size > MAX_FILE_SIZE_BYTES) {
+            notify.warn('Filesize must 10mb or below')
             return false;
           }
           return true;
@@ -77,8 +79,6 @@ export default function FileUpload({
       console.log("Selected files:", selectedFiles);
       handelFileUpload(selectedFiles);
     }
-
-
   }, [selectedFiles, showFooter]);
 
   return (
@@ -104,33 +104,46 @@ export default function FileUpload({
                 <span className="text-danger"> {errorMessage} </span>
               )}
             </Card.Body>
-           {showFooter && <Card.Footer className="text-muted">
-              <button
-                onClick={handleSaveButtonClick}
-                type="button"
-                className="btn btn-primary"
-              >
-                Upload
-              </button>
-            </Card.Footer>}
+            {showFooter && (
+              <Card.Footer className="text-muted">
+                <button
+                  onClick={handleSaveButtonClick}
+                  type="button"
+                  className="btn btn-primary"
+                >
+                  Upload
+                </button>
+              </Card.Footer>
+            )}
           </Card>
         </Col>
         {selectedFiles.map((file, index) => (
           <div key={index} className="col-md-3 my-2">
             <Card style={{ width: "18rem", height: "100%" }}>
-              <Card.Img
-                variant="bottom"
-                src={file.url}
-                style={{ height: "200px", objectFit: "contain" }}
-              />
-              <Card.Body>
-                <Card.Title>{file.name}</Card.Title>
-              </Card.Body>
-              <Card.Footer className="text-muted">
-                <button type="button" onClick={() => removeImage(file.id)}>
+              <div className="image-container">
+                <Card.Img
+                  variant="bottom"
+                  src={file.url}
+                  style={{ height: "200px", objectFit: "inherit" }}
+                />
+
+                <button
+                  variant="danger"
+                  type="button"
+                  onClick={() => removeImage(file.id)}
+                  className="deleteBtn"
+                  style={{
+                    position: "absolute",
+                    top: "30%",
+                    width: "100%",
+                  }}
+                >
                   Delete
                 </button>
-              </Card.Footer>
+              </div>
+              <Card.Body>
+                <Card.Title className="h6">{file.name}</Card.Title>
+              </Card.Body>
             </Card>
           </div>
         ))}

@@ -1,6 +1,6 @@
 // Importing necessary libraries
 import React, { useEffect, useState } from "react";
-import { Form, Button, Container, Row, Col, Spinner } from "react-bootstrap";
+import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "../../css/car.css";
 import FileUpload from "../fileUpload";
 import {
@@ -29,6 +29,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { FaSpinner } from "react-icons/fa6";
+import notify from "../../services/notify";
 // CarForm component
 export default function CarForm() {
   // const [carDetail, setCarDetail] = useState({
@@ -160,9 +161,9 @@ export default function CarForm() {
     const url = await generateImageThumbnail();
     const carCollection = collection(db, "cars");
     await addDoc(carCollection, { ...formik.values, image_url: url })
-      .then((response) => {
+      .then(async (response) => {
         console.log("Response", response);
-        saveFileData(response.id);
+       await saveFileData(response.id);
       })
       .catch((error) => {
         console.log("Error", error);
@@ -219,8 +220,7 @@ export default function CarForm() {
          await deleteCarAttachments();
         }
       });
-
-      toast.success("Add Detail Added successfully");
+      notify.success("Detail Added successfully");
       clearData();
     } catch (error) {
       console.error("Error", error);
@@ -590,7 +590,7 @@ export default function CarForm() {
           )}
         </Row>
 
-        <Button variant="primary" className="mt-1 save" type="submit">
+        <Button variant="primary" className="mt-1 save" type="submit" disabled={loader}>
           Submit {loader && <FaSpinner className="spinner-border spinner-border-sm border-0"/> }
         </Button>
         <Button
@@ -602,7 +602,6 @@ export default function CarForm() {
           Clear
         </Button>
       </Form>
-      <ToastContainer />
     </Container>
   );
 }

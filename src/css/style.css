@@ -12,4 +12,33 @@
 .map-container {
   flex: 3;
   position: relative;
+}
+
+.vertical-menu {
+  background-color: #d7dee0;
+  color: #fff;
+}
+.vertical-menu .nav-link {
+  margin-left: 10px;
+  color: #fff;
+}
+.vertical-menu .nav-link:hover {
+  background-color: #61dbfb;
+  border-radius: 10px;
+}
+.vertical-menu .profile-icon {
+  background-color: #61dbfb;
+}
+.vertical-menu .dropdown .dropdown-toggle:hover {
+  background-color: transparent !important;
+}
+.vertical-menu .dropdown .dropdown-menu {
+  left: -130px;
+}
+.vertical-menu .dropdown .dropdown-menu .dropdown-item:hover {
+  background-color: #61dbfb;
+  color: #fff;
+}
+.vertical-menu .dropdown .dropdown-menu .dropdown-item:hover:last-child:hover {
+  background-color: transparent;
 }/*# sourceMappingURL=style.css.map */

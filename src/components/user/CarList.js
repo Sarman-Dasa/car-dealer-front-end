@@ -21,7 +21,12 @@ import notFoundImg from "../../image/not-found.jpg";
 import CarOnRent from "../cars/CarOnRent";
 import MyPagination from "../pagination";
 
-export default function CarList({ setCarCount,setCarTotalCount, carFilter, perPage }) {
+export default function CarList({
+  setCarCount,
+  setCarTotalCount,
+  carFilter,
+  perPage,
+}) {
   const MySwal = withReactContent(Swal);
   const userInfo = useSelector((state) => state.app.user);
   const [loader, setLoader] = useState(false);
@@ -38,8 +43,6 @@ export default function CarList({ setCarCount,setCarTotalCount, carFilter, perPa
     const q = query(carCollection, where("owner_id", "==", userInfo.id));
 
     const response = await getDocs(q);
-    let lastVisible = response.docs[response.docs.length - 1];
-    console.log("lastVisible: ", lastVisible);
 
     const cars = response.docs.map((item) => ({
       ...item.data(),
@@ -47,7 +50,6 @@ export default function CarList({ setCarCount,setCarTotalCount, carFilter, perPa
     }));
     setTotalCount(cars.length);
     setCarTotalCount(cars.length);
-    console.log("cars", cars);
     getStatusWiseCount(cars);
     setCars(cars);
   };
@@ -330,12 +332,12 @@ export default function CarList({ setCarCount,setCarTotalCount, carFilter, perPa
         </div>
       )}
       <div>
-      <MyPagination
-        totalCount={totalCount}
-        perPage={perPage}
-        currentPage={currentPage}
-        handlePageChange={(pageNumber) => setCurrentPage(pageNumber)}   
-      />
+        <MyPagination
+          totalCount={totalCount}
+          perPage={perPage}
+          currentPage={currentPage}
+          handlePageChange={(pageNumber) => setCurrentPage(pageNumber)}
+        />
       </div>
     </Row>
   );

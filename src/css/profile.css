@@ -5,6 +5,9 @@
   border: 2px solid #595b5c;
   border-radius: 20px;
 }
+.user-profile .profile-card li {
+  cursor: pointer;
+}
 .user-profile .car-detail {
   overflow-y: auto;
   overflow-x: hidden;

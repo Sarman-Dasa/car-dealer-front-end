@@ -1,4 +1,4 @@
-import { Button } from "react-bootstrap";
+import { Button, NavDropdown, Image } from "react-bootstrap";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import { Link } from "react-router-dom";
@@ -8,7 +8,6 @@ import { auth } from "../components/firebase/Firebase";
 import { useDispatch } from "react-redux";
 import { userLogOut } from "../store/app";
 import { useNavigate } from "react-router-dom";
-import { ImProfile } from "react-icons/im";
 import { FaCar } from "react-icons/fa";
 function VerticalLayout() {
   const userInfo = useSelector((state) => state.app.user);
@@ -25,17 +24,17 @@ function VerticalLayout() {
   };
 
   return (
-    <Navbar expand="lg" className="bg-body-tertiary mb-2">
+    <Navbar expand="lg" className="vertical-menu">
       <div className="container-fluid ms-5">
         <Link to="/" className="navbar-brand">
-          <FaCar />
-        </Link>
-        <Link to="/" className="nav-link">
-          Home
+          <FaCar className="text-light" />
         </Link>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
+            <Link to="/" className="nav-link">
+              Home
+            </Link>
             {userInfo && (
               <>
                 <Link to="/cars" className="nav-link">
@@ -60,16 +59,39 @@ function VerticalLayout() {
                 </Link>
               </>
             ) : (
-              <div>
-                <p className="d-inline">
-                  Signed in as: <b>{userInfo.full_name}</b>
-                  <Link to="/profile">
-                    <ImProfile color="#166EFD" />
-                  </Link>
+              <div className="d-flex">
+                <p className="my-xxl-auto">
+                  Signed in as:<b>{userInfo.full_name}</b>
                 </p>
-                <Button className="ms-5 mt-1" onClick={logOut}>
-                  LogOut
-                </Button>
+                <NavDropdown
+                  title={
+                    <Image
+                      src={userInfo.avatar}
+                      alt="S"
+                      roundedCircle
+                      width="24px"
+                      height="24px"
+                    />
+                  }
+                  id="basic-nav-dropdown"
+                  className="p-0"
+                >
+                  <NavDropdown.Item as={Link} to="/profile">
+                    Profile
+                  </NavDropdown.Item>
+                  <NavDropdown.Item as={Link} to="/change-password">
+                    Change password
+                  </NavDropdown.Item>
+                  <NavDropdown.Divider />
+                  <NavDropdown.Item>
+                    <Button
+                      className="btn btn-secondary w-100"
+                      onClick={logOut}
+                    >
+                      LogOut
+                    </Button>
+                  </NavDropdown.Item>
+                </NavDropdown>
               </div>
             )}
           </Nav>

@@ -442,6 +442,7 @@ export default function CarDetail() {
                   placeholder="Enter car color"
                   name="startDate"
                   value={carRentDetail.startDate}
+                  min={moment().format("YYYY-MM-DD")} 
                   onChange={handelFormData}
                 />
               </Form.Group>
@@ -455,6 +456,7 @@ export default function CarDetail() {
                   placeholder="Enter car color"
                   name="endDate"
                   value={carRentDetail.endDate}
+                  min={moment().format("YYYY-MM-DD")} 
                   onChange={handelFormData}
                 />
               </Form.Group>

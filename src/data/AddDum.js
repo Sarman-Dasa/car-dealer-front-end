@@ -23,7 +23,7 @@ export default function AddDum() {
             status: "available",
             transmission: "Automatic",
             fuel_type: "Gasoline",
-            image_url: " https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/user%2F39f5b20a-29df-4f5f-9dc4-e9a7c887d4a1?alt=media&token=ad0634cf-8c50-4528-b8a4-b26ca353dca4",
+            image_url: "https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/imagesThumbnail%2Ff0becb70-21cb-4337-890e-e3267488da5f?alt=media&token=71bf9420-62b7-47e8-93e8-efa57397167e",
         },
         {
             company_name: "Honda",
@@ -39,7 +39,7 @@ export default function AddDum() {
             status: "available",
             transmission: "Manual",
             fuel_type: "Gasoline",
-            image_url: " https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/user%2F39f5b20a-29df-4f5f-9dc4-e9a7c887d4a1?alt=media&token=ad0634cf-8c50-4528-b8a4-b26ca353dca4",
+            image_url: "https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/imagesThumbnail%2Ff0becb70-21cb-4337-890e-e3267488da5f?alt=media&token=71bf9420-62b7-47e8-93e8-efa57397167e"
         },
         {
             company_name: "Ford",
@@ -55,7 +55,7 @@ export default function AddDum() {
             status: "available",
             transmission: "Automatic",
             fuel_type: "Gasoline",
-            image_url: " https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/user%2F39f5b20a-29df-4f5f-9dc4-e9a7c887d4a1?alt=media&token=ad0634cf-8c50-4528-b8a4-b26ca353dca4",
+            image_url: "https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/imagesThumbnail%2Ff0becb70-21cb-4337-890e-e3267488da5f?alt=media&token=71bf9420-62b7-47e8-93e8-efa57397167e"
         },
         {
             company_name: "Chevrolet",
@@ -71,7 +71,7 @@ export default function AddDum() {
             status: "available",
             transmission: "Automatic",
             fuel_type: "Gasoline",
-            image_url: " https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/user%2F39f5b20a-29df-4f5f-9dc4-e9a7c887d4a1?alt=media&token=ad0634cf-8c50-4528-b8a4-b26ca353dca4",
+            image_url: "https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/imagesThumbnail%2Ff0becb70-21cb-4337-890e-e3267488da5f?alt=media&token=71bf9420-62b7-47e8-93e8-efa57397167e"
         },
         {
             company_name: "Nissan",
@@ -87,7 +87,7 @@ export default function AddDum() {
             status: "available",
             transmission: "CVT",
             fuel_type: "Gasoline",
-            image_url: " https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/user%2F39f5b20a-29df-4f5f-9dc4-e9a7c887d4a1?alt=media&token=ad0634cf-8c50-4528-b8a4-b26ca353dca4",
+            image_url: "https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/imagesThumbnail%2Ff0becb70-21cb-4337-890e-e3267488da5f?alt=media&token=71bf9420-62b7-47e8-93e8-efa57397167e"
         },
         {
             company_name: "BMW",
@@ -103,7 +103,7 @@ export default function AddDum() {
             status: "available",
             transmission: "Automatic",
             fuel_type: "Gasoline",
-            image_url: " https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/user%2F39f5b20a-29df-4f5f-9dc4-e9a7c887d4a1?alt=media&token=ad0634cf-8c50-4528-b8a4-b26ca353dca4",
+            image_url: "https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/imagesThumbnail%2Ff0becb70-21cb-4337-890e-e3267488da5f?alt=media&token=71bf9420-62b7-47e8-93e8-efa57397167e"
         },
         {
             company_name: "Mercedes-Benz",
@@ -119,7 +119,7 @@ export default function AddDum() {
             status: "available",
             transmission: "Automatic",
             fuel_type: "Gasoline",
-            image_url: " https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/user%2F39f5b20a-29df-4f5f-9dc4-e9a7c887d4a1?alt=media&token=ad0634cf-8c50-4528-b8a4-b26ca353dca4",
+            image_url: "https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/imagesThumbnail%2Ff0becb70-21cb-4337-890e-e3267488da5f?alt=media&token=71bf9420-62b7-47e8-93e8-efa57397167e"
         },
         {
             company_name: "Audi",
@@ -135,7 +135,7 @@ export default function AddDum() {
             status: "available",
             transmission: "Automatic",
             fuel_type: "Gasoline",
-            image_url: " https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/user%2F39f5b20a-29df-4f5f-9dc4-e9a7c887d4a1?alt=media&token=ad0634cf-8c50-4528-b8a4-b26ca353dca4",
+            image_url: "https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/imagesThumbnail%2Ff0becb70-21cb-4337-890e-e3267488da5f?alt=media&token=71bf9420-62b7-47e8-93e8-efa57397167e"
         },
         {
             company_name: "Lexus",
@@ -151,7 +151,7 @@ export default function AddDum() {
             status: "available",
             transmission: "Automatic",
             fuel_type: "Gasoline",
-            image_url: " https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/user%2F39f5b20a-29df-4f5f-9dc4-e9a7c887d4a1?alt=media&token=ad0634cf-8c50-4528-b8a4-b26ca353dca4",
+            image_url: "https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/imagesThumbnail%2Ff0becb70-21cb-4337-890e-e3267488da5f?alt=media&token=71bf9420-62b7-47e8-93e8-efa57397167e"
         },
         {
             company_name: "Tesla",
@@ -167,7 +167,7 @@ export default function AddDum() {
             status: "available",
             transmission: "Automatic",
             fuel_type: "Electric",
-            image_url: " https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/user%2F39f5b20a-29df-4f5f-9dc4-e9a7c887d4a1?alt=media&token=ad0634cf-8c50-4528-b8a4-b26ca353dca4",
+            image_url: "https://firebasestorage.googleapis.com/v0/b/car-dealers-bffbe.appspot.com/o/imagesThumbnail%2Ff0becb70-21cb-4337-890e-e3267488da5f?alt=media&token=71bf9420-62b7-47e8-93e8-efa57397167e"
         },
     ];
 

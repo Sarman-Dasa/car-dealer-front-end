@@ -14,6 +14,7 @@ import {
 } from "react-bootstrap";
 import { MdFilterAlt } from "react-icons/md";
 import { useSelector } from "react-redux";
+import notFoundImg from "../image/not-found.jpg";
 
 export default function Cars() {
   const [cars, setCars] = useState();
@@ -125,7 +126,7 @@ export default function Cars() {
       </Modal>
       <Container fluid>
         <Row>
-          {cars &&
+          {cars && cars.length ? (
             cars.map((item) => (
               <div key={item.id} className="col-md-3 my-2">
                 <Card style={{ width: "25rem", height: "auto" }}>
@@ -164,7 +165,18 @@ export default function Cars() {
                   </Card.Footer>
                 </Card>
               </div>
-            ))}
+            ))
+          ) : (
+            <div className="text-center">
+              <img
+                src={notFoundImg}
+                width="60%"
+                height="100%"
+                className="d-inline-block align-top"
+                alt="R"
+              />
+            </div>
+          )}
         </Row>
       </Container>
     </div>

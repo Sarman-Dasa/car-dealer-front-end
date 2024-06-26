@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Form, Button, Container, Row, Col, Modal } from "react-bootstrap";
 import "../../css/auth.css";
-import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
-import { auth } from "../firebase/Firebase";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import PasswordField from "./PasswordField.js";
-import notify from "../../services/notify";
+import { axiosGetResponse, axiosPostResponse } from "../../services/axios.js";
 
 export default function ChangePassword() {
   const [searchParams] = useSearchParams();
-  const code = searchParams.get("oobCode");
+  const token = searchParams.get("token");
+  const email = searchParams.get("email");
   const [isValidToken, setIsValidToken] = useState(true);
   const [loader, setLoader] = useState(false);
   const [loginButtonShow, setLoginButtonShow] = useState(false);
@@ -36,37 +35,41 @@ export default function ChangePassword() {
   });
 
   const handleSubmit = async () => {
-    const password = formik.values.newPassword;
-    await confirmPasswordReset(auth, code, password)
-      .then((result) => {
-        setLoginButtonShow(true);
-        notify.success("password reset successfully.");
-        formik.resetForm();
-      })
-      .catch((err) => {
-        console.log("err: ", err);
-      });
+    const requestData = {
+      email: email,
+      token: token,
+      password: formik.values.newPassword,
+      password_confirmation: formik.values.confirmPassword,
+    };
+    const response = await axiosPostResponse(
+      "/resetpassword",
+      requestData,
+      true
+    );
+    if (response) {
+      formik.resetForm();
+      setLoginButtonShow(true);
+    }
   };
 
   useEffect(() => {
-    if (!code) {
+    if (!token) {
       navigate("/not-found");
     }
 
     // Password reset token is valid or not
     async function checkEmailVerifyToken() {
       setLoader(true);
-      await verifyPasswordResetCode(auth, code)
-        .then((result) => {
-          setIsValidToken(true);
-        })
-        .catch((err) => {
-          setIsValidToken(false);
-        });
+      const response = await axiosGetResponse(
+        `verify-email-reset-token/${token}/${email}`
+      );
+      if (response) {
+        setIsValidToken(response.data);
+      }
       setLoader(false);
     }
     checkEmailVerifyToken();
-  }, [code]);
+  }, [token]);
 
   if (!isValidToken) {
     return (

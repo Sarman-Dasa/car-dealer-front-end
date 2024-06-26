@@ -1,12 +1,10 @@
 import React from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "../../css/auth.css";
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "../firebase/Firebase";
 import { Link } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import notify from "../../services/notify.js";
+import { axiosPostResponse } from "../../services/axios.js";
 
 export default function SignIn() {
   // form validation
@@ -25,16 +23,13 @@ export default function SignIn() {
   });
 
   const sendResetPasswordEmail = async () => {
-    const email = formik.values.email;
-    await sendPasswordResetEmail(auth, email)
-      .then((res) => {
-        console.log("res: ", res);
-        notify.success("Password reset mail send succussfully.");
-        formik.resetForm();
-      })
-      .catch((error) => {
-        console.log("error: ", error);
-      });
+    const requestData = {
+      email: formik.values.email
+    }
+    const response = await axiosPostResponse('/forgotpassword', requestData, true);
+    if(response) {
+      formik.resetForm();
+    }
   };
 
   return (

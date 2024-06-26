@@ -1,18 +1,17 @@
 import React from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "../../css/auth.css";
-import {
-  EmailAuthProvider,
-  getAuth,
-  reauthenticateWithCredential,
-  updatePassword,
-} from "firebase/auth";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import PasswordField from "./PasswordField.js";
-import notify from "../../services/notify";
+import { axiosPostResponse } from "../../services/axios.js";
+import { useNavigate } from "react-router-dom";
 
 export default function ChangePassword() {
+
+    const navigate = useNavigate();
+
+
   // form validation
   const validationSchema = Yup.object({
     currentPassword: Yup.string().required(),
@@ -30,32 +29,21 @@ export default function ChangePassword() {
     },
     validationSchema: validationSchema,
     onSubmit: (values) => {
-      handleSubmit();
+      handleSubmit(values);
     },
   });
 
-  const handleSubmit = async () => {
-    const authUser = getAuth().currentUser;
-    const credential = EmailAuthProvider.credential(
-      authUser.email,
-      formik.values.currentPassword
-    );
-    
-    reauthenticateWithCredential(authUser, credential)
-      .then(() => {
-        updatePassword(authUser, formik.values.newPassword)
-          .then(() => {
-            notify.success("Password change successfully.");
-            formik.resetForm();
-          })
-          .catch((error) => {
-            notify.error(error);
-          });
-      })
-      .catch((error) => {
-        notify.error("Invalid current password, please try again !!");
-        formik.setFieldError("currentPassword", "invalid password!");
-      });
+  const handleSubmit = async (values) => {
+    const requestData = {
+      current_password: values.currentPassword,
+      password: values.newPassword,
+      password_confirmation: values.confirmPassword,
+    };
+    const response = await axiosPostResponse("/user/changepassword",requestData,true);
+    if(response) {
+      formik.resetForm();
+      navigate('/profile');
+    }
   };
 
   return (

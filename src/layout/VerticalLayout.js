@@ -3,23 +3,26 @@ import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { signOut } from "firebase/auth";
-import { auth } from "../components/firebase/Firebase";
 import { useDispatch } from "react-redux";
 import { userLogOut } from "../store/app";
 import { useNavigate } from "react-router-dom";
 import { FaCar } from "react-icons/fa";
+import { axiosPostResponse } from "../services/axios";
 function VerticalLayout() {
   const userInfo = useSelector((state) => state.app.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const logOut = async () => {
-    await signOut(auth);
+    // await signOut(auth);
+    const response  = await axiosPostResponse('user/logout');
+    console.log('response: ', response);
+    
     navigate("/sign-in", { replace: true });
     setTimeout(() => {
       dispatch(userLogOut());
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
     }, 200);
   };
 
@@ -66,7 +69,8 @@ function VerticalLayout() {
                 <NavDropdown
                   title={
                     <Image
-                      src={userInfo.avatar}
+                      src={ process.env.REACT_APP_API_IMAGE_PATH +
+                        "/" + userInfo.avatar}
                       alt="S"
                       roundedCircle
                       width="24px"

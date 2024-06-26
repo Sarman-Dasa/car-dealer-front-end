@@ -1,16 +1,13 @@
 import React from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "../../css/auth.css";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "../firebase/Firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setLoginUserData } from "../../store/app";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import PasswordField from "./PasswordField.js";
-import notify from "../../services/notify.js";
+import { axiosPostResponse } from "../../services/axios.js";
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -29,44 +26,22 @@ export default function SignIn() {
     },
     validationSchema: validationSchema,
     onSubmit: (values) => {
-      // console.log("call sign in");
       handleSubmit();
     },
   });
 
-  const { email, password } = formik.values;
   const handleSubmit = async () => {
-    await signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        //  const user = userCredential.user.email;
-        getLoginUserData();
-        // navigate("/")
-      })
-      .catch((error) => {
-        notify.error("Email & password does not match");
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode, errorMessage);
-      });
+    const response = await axiosPostResponse("/login", formik.values, true);
+    if (response) {
+      const userInfo = response.data.user;
+      const token = response.data.token;
+      dispatch(setLoginUserData(userInfo));
+      const userStr = JSON.stringify(userInfo);
+      localStorage.setItem("user", userStr);
+      localStorage.setItem("token", token);
+      navigate("/");
+    }
   };
-
-  async function getLoginUserData() {
-    const userCollection = collection(db, "users");
-    const q = query(userCollection, where("email", "==", email));
-    const data = await getDocs(q);
-    const userId = data.docs[0].id;
-    const user = data.docs[0].data();
-
-    const userInfo = {
-      ...user,
-      id: userId,
-    };
-
-    dispatch(setLoginUserData(userInfo));
-    const userStr = JSON.stringify(userInfo);
-    localStorage.setItem("user", userStr);
-    navigate("/");
-  }
 
   return (
     <Container className="signin-container">

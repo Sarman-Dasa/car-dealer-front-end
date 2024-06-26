@@ -53,3 +53,16 @@ $border-radius: 5px;
     width: 200px;
   }
 }
+
+.date-select { 
+    // min-width:200px;
+    input {
+      border: 0px;
+      min-width:-webkit-fill-available;
+      &:active, &:focus {
+        border: 0px;
+        border-radius:0px;
+      }
+    }
+   
+}

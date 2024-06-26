@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { db } from "./firebase/Firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { useNavigate, createSearchParams } from "react-router-dom";
+import { useNavigate, createSearchParams, useSearchParams } from "react-router-dom";
 import {
   Card,
   Row,
@@ -15,6 +13,7 @@ import {
 import { MdFilterAlt } from "react-icons/md";
 import { useSelector } from "react-redux";
 import notFoundImg from "../image/not-found.jpg";
+import { axiosPostResponse } from "../services/axios";
 
 export default function Cars() {
   const [cars, setCars] = useState();
@@ -23,38 +22,40 @@ export default function Cars() {
   const [priceRange, setPriceRange] = useState(0);
   const navigate = useNavigate();
   const userInfo = useSelector((state) => state.app.user);
+  const [searchParams] = useSearchParams();
 
   const viewMore = (id) => {
     navigate(`/car-view/${id}`);
   };
 
   const getCars = async () => {
-    const carCollection = collection(db, "cars");
-
-    const whereConditions = [where("owner_id", "!=", userInfo.id)];
-
-    whereConditions.push(where("status", "==", "available"));
-    if (carType === "rent") {
-      whereConditions.push(where("car_for_rent", "==", "yes"));
+    const requestData = {
+      price_range: priceRange,
+      car_type: carType,
+    };
+    const response = await axiosPostResponse("/cars", requestData);
+    if (response) {
+      console.log(response);
+      const data = response.data;
+      setCars(data);
     }
-    if (priceRange) {
-      whereConditions.push(where("price", "<=", priceRange));
-    }
-
-    const q = query(carCollection, ...whereConditions);
-    const response = await getDocs(q);
-
-    const cars = response.docs.map((item) => ({
-      ...item.data(),
-      id: item.id,
-    }));
-    setCars(cars);
   };
 
   const applyFilter = () => {
     getCars();
+    navigate(
+      `/cars?${createSearchParams({
+        type: carType,
+        range:priceRange
+      })}`);
     setshowFilter(false);
   };
+
+  const clearFilter = () => {
+    setPriceRange(0);
+    setCarType('available');
+    applyFilter();
+  }
 
   const getCarForRent = (id) => {
     navigate(
@@ -70,7 +71,16 @@ export default function Cars() {
       return;
     }
     getCars();
+
   }, []);
+
+  useEffect(() => {
+    const type = searchParams.get('type') || 'available';
+    const range = searchParams.get('range') || 0;
+
+    setCarType(type);
+    setPriceRange(range);
+  }, [searchParams]);
 
   const handleClose = () => {
     setshowFilter(false);
@@ -122,6 +132,9 @@ export default function Cars() {
           <Button variant="primary" onClick={applyFilter}>
             Apply
           </Button>
+          <Button variant="danger" onClick={clearFilter}>
+            Clear
+          </Button>
         </Modal.Footer>
       </Modal>
       <Container fluid>
@@ -132,7 +145,11 @@ export default function Cars() {
                 <Card style={{ width: "25rem", height: "auto" }}>
                   <Card.Img
                     variant="bottom"
-                    src={item.image_url}
+                    src={
+                      process.env.REACT_APP_API_IMAGE_PATH +
+                      "/" +
+                      item.car_attachment?.url
+                    }
                     style={{ height: "250px", objectFit: "inherit" }}
                   />
                   <Card.Body>

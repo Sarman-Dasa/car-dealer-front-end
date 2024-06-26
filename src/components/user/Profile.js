@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Badge, Button, Col, Form, Row } from "react-bootstrap";
 import { db, storage } from "../firebase/Firebase";
 import "../../css/profile.css";
@@ -15,14 +15,16 @@ import {
 import { setLoginUserData } from "../../store/app";
 import AddDum from "../../data/AddDum";
 import CarList from "./CarList";
+import { axiosPostResponse } from "../../services/axios";
+import Emitter from "../../services/emitter";
 export default function Profile() {
   const userInfo = useSelector((state) => state.app.user);
   const [showUpload, setShowUpload] = useState(false);
   const [carCount, setCarCount] = useState(null);
   const [carFilter, setCarFilter] = useState(null);
-  const [perPage, setPerPage] = useState(5);
+  const [perPage, setPerPage] = useState(4);
   const [carTotalCount,setCarTotalCount] = useState(0);
-  const perPageOption = [5, 10, 15, 20];
+  const perPageOption = [4, 8, 16, 32];
   const dispatch = useDispatch();
 
   // Upload User profile image
@@ -76,6 +78,36 @@ export default function Profile() {
       });
   }
 
+  const statusWiseCarCount = async () => {
+    const response = await axiosPostResponse('cars/car-count');
+    if(response) {
+      const data = response.data;
+      setCarCount({
+        avaliable: data.avaliable,
+        carForRent: data.car_for_rent,
+        sold: data.sold,
+        carOnRent: data.on_rent,
+        totalCount: data.count,
+      });
+    }
+  }
+
+  useEffect(() => {
+    statusWiseCarCount();
+
+    Emitter.on('reloadCarStatusCount',() => {
+      statusWiseCarCount();
+    })
+
+    Emitter.on('reloadCar',(data) => {
+        setCarFilter(data);
+    })
+    return () => {
+      Emitter.off('reloadCarStatusCount');
+      Emitter.off('reloadCar');
+    };
+  }, []);
+
   return (
     <>
       {showUpload && (
@@ -95,7 +127,8 @@ export default function Profile() {
               <div className="profile-card">
                 <div className="card" style={{ width: "18rem" }}>
                   <img
-                    src={userInfo.avatar}
+                    src={ process.env.REACT_APP_API_IMAGE_PATH +
+                      "/" + userInfo.avatar}
                     className="card-img-top"
                     alt="User Avatar"
                   />
@@ -143,6 +176,19 @@ export default function Profile() {
                       )}
                     </div>
                     <ul className="list-group list-group-flush">
+                      <li>
+                      <li
+                        className="list-group-item d-flex justify-content-between"
+                        onClick={() => setCarFilter(null)}
+                      >
+                        <strong>All :</strong>
+                        <Badge variant="primary">
+                          {carCount && carCount.totalCount
+                            ? carCount.totalCount
+                            : 0}
+                        </Badge>
+                      </li>
+                      </li>
                       <li
                         className="list-group-item d-flex justify-content-between"
                         onClick={() => setCarFilter("available")}

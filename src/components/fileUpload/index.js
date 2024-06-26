@@ -25,20 +25,27 @@ export default function FileUpload({
   const handleFileChange = async (e) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      const newFiles = Array.from(files)
-        .filter((file) => {
-          if (file.size > MAX_FILE_SIZE_BYTES) {
-            notify.warn('Filesize must 10mb or below')
-            return false;
-          }
-          return true;
-        })
-        .map((file) => ({
-          id: uuid(),
-          url: URL.createObjectURL(file),
-          name: file.name,
-          image: file, // Include the actual file object if needed
-        }));
+    
+      const newFiles = await Promise.all(
+        Array.from(files)
+          .filter((file) => {
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+              notify.warn('Filesize must be 10MB or below');
+              return false;
+            }
+            return true;
+          })
+          .map(async (file) => {
+            const base64URL = await convertFileToBase64(file);
+            return {
+              id: uuid(),
+              url: URL.createObjectURL(file),
+              name: file.name,
+              image: file, // Include the actual file object if needed
+              base64URL: base64URL // Add base64 data URL
+            };
+          })
+      );
       if (isMultiple) {
         setSelectedFiles((prevFiles) => [...prevFiles, ...newFiles]);
       } else {
@@ -47,17 +54,23 @@ export default function FileUpload({
     }
   };
 
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleSaveButtonClick = () => {
     handelFileUpload(selectedFiles);
   };
 
   //Remove File
   const removeImage = (id) => {
-    let index = selectedFiles.findIndex((item) => item.id === id);
-    let updatedFiles = [...selectedFiles];
-    let file = updatedFiles.splice(index, 1);
-
-    handelFileRemove(file);
+    const updatedFiles = selectedFiles.filter((file) => file.id !== id);
+    handelFileRemove(id);
     setSelectedFiles(updatedFiles);
   };
 
@@ -76,8 +89,9 @@ export default function FileUpload({
 
   useEffect(() => {
     if (!showFooter && selectedFiles.length > 0) {
-      console.log("Selected files:", selectedFiles);
-      handelFileUpload(selectedFiles);
+      // console.log("Selected files:", selectedFiles);
+      const files = selectedFiles.filter((obj) => obj.image);
+      handelFileUpload(files);
     }
   }, [selectedFiles, showFooter]);
 

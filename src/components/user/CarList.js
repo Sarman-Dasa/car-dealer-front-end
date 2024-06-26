@@ -1,93 +1,44 @@
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-  writeBatch,
-} from "firebase/firestore";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Badge, Card, Form, Row, Spinner, Button } from "react-bootstrap";
-import { useSelector } from "react-redux";
-import { db } from "../firebase/Firebase";
 import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import notify from "../../services/notify";
 import notFoundImg from "../../image/not-found.jpg";
 import CarOnRent from "../cars/CarOnRent";
 import MyPagination from "../pagination";
+import { axiosDeleteResponse, axiosPostResponse } from "../../services/axios";
 
-export default function CarList({
-  setCarCount,
-  setCarTotalCount,
-  carFilter,
-  perPage,
-}) {
+export default function CarList({ setCarTotalCount, carFilter, perPage }) {
   const MySwal = withReactContent(Swal);
-  const userInfo = useSelector((state) => state.app.user);
   const [loader, setLoader] = useState(false);
   const [cars, setCars] = useState();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState();
-  const [carOnRentList, setCarOnRentList] = useState();
-  const [customerList, setCustomerList] = useState();
   const navigate = useNavigate();
 
   //Get Cars list
   const getCars = async () => {
-    const carCollection = collection(db, "cars");
-    const q = query(carCollection, where("owner_id", "==", userInfo.id));
+    setLoader(true);
 
-    const response = await getDocs(q);
+    const requestData = {
+      status: carFilter,
+      per_page: perPage,
+      page:currentPage
+    };
 
-    const cars = response.docs.map((item) => ({
-      ...item.data(),
-      id: item.id,
-    }));
-    setTotalCount(cars.length);
-    setCarTotalCount(cars.length);
-    getStatusWiseCount(cars);
-    setCars(cars);
-  };
-
-  // set status wise car Count
-  const getStatusWiseCount = (items) => {
-    const carStatusCount = items.reduce((count, car) => {
-      const { status } = car;
-      count[status] = (count[status] || 0) + 1;
-      if (car.car_for_rent && car.car_for_rent === "yes") {
-        count["car_for_rent"] = (count["car_for_rent"] || 0) + 1;
-      }
-      return count;
-    }, {});
-    setCarCount({
-      avaliable: carStatusCount.available,
-      carForRent: carStatusCount.car_for_rent,
-      sold: carStatusCount.sold,
-      carOnRent: carStatusCount.onRent,
-    });
-  };
-
-  // Filter on cars list
-  const carsListFilter = useMemo(() => {
-    let filterData = cars;
-    if (
-      carFilter === "available" ||
-      carFilter === "sold" ||
-      carFilter === "onRent"
-    ) {
-      filterData = cars.filter((item) => item.status === carFilter);
-    } else if (carFilter === "car_for_rent") {
-      filterData = cars.filter((item) => item.car_for_rent === "yes");
+    const response = await axiosPostResponse(
+      "/cars/owner-car-list",
+      requestData
+    );
+    if (response) {
+      const data = response.data;
+      setCars(data.cars);
+      setTotalCount(data.count);
+      setCarTotalCount(data.count);
     }
-    let count = filterData && filterData.length ? filterData.length : 0;
-    setTotalCount(count);
-    return filterData;
-  }, [carFilter, cars]);
+    setLoader(false);
+  };
 
   // Navigate to edit page
   const editCarDetail = (id) => {
@@ -96,9 +47,9 @@ export default function CarList({
 
   // Update Car set car for rent
   const onChangeHandler = async (e, id) => {
-    const carForRent = e.target.checked ? "yes" : "no";
+    const carForRent = e.target.checked;
 
-    if (carForRent === "yes") {
+    if (carForRent) {
       MySwal.fire({
         title: "Add Detail",
         icon: "none",
@@ -126,18 +77,20 @@ export default function CarList({
   };
 
   async function updateCarForRent(status, id, rentValue = null) {
-    const carDoc = doc(db, "cars", id);
-    await updateDoc(carDoc, {
+    const requestData = {
+      id: id,
       car_for_rent: status,
       per_day_rent: rentValue,
-    })
-      .then(() => {
-        console.log("Updated");
-        getCars();
-      })
-      .catch((error) => {
-        console.log("Error", error);
-      });
+    };
+
+    const response = await axiosPostResponse(
+      "cars/set-car-for-rent",
+      requestData,
+      true
+    );
+    if (response) {
+      getCars();
+    }
   }
 
   // Show Confirmation message for car delete
@@ -161,77 +114,25 @@ export default function CarList({
 
   // Delete Car
   async function deleteCar(id) {
-    //console.log("carDoc: ", id);
-    const carDoc = doc(db, "cars", id);
-    const carAttachmentsColleaction = collection(db, "car_attachments");
-    const q = query(carAttachmentsColleaction, where("car_id", "==", id));
-
-    const response = await getDocs(q);
-    console.log("response: ", response);
-    const batch = writeBatch(db);
-    console.log("batch: ", batch);
-
-    response.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-
-    // Commit the batch
-    await batch.commit();
-
-    await deleteDoc(carDoc)
-      .then((response) => {
-        getCars();
-        notify.success("Car Deleted Successfully");
-        //console.log("Response", response);
-      })
-      .catch((error) => {
-        //console.log("Error", error);
-      });
-  }
-
-  // Get Car on rent details
-  const getCarOnRentDetail = async () => {
-    setLoader(true);
-
-    const carCollection = collection(db, "rent_car_details");
-    const q = query(carCollection, where("owner_id", "==", userInfo.id));
-    const response = await getDocs(q);
-
-    const carOnRentList = response.docs.map((item) => ({
-      ...item.data(),
-      id: item.id,
-    }));
-
-    const customerIds = carOnRentList.map((obj) => obj.customer_id);
-    if (customerIds && customerIds.length) {
-      getCustomerDetail(customerIds);
+      
+    const response = await axiosDeleteResponse(`cars/delete/${id}`,{},true);
+    if(response) {
+      getCars();
     }
-    setCarOnRentList(carOnRentList);
-    setLoader(false);
-  };
-
-  // Get Customer Detail
-  async function getCustomerDetail(ids) {
-    //console.log("ids",ids);
-    const customerCollection = collection(db, "users");
-    const q = query(customerCollection, where("__name__", "in", ids));
-    let response = await getDocs(q);
-    const customers = response.docs.map((item) => ({
-      ...item.data(),
-      id: item.id,
-    }));
-    setCustomerList(customers);
   }
 
   useEffect(() => {
     getCars();
-    getCarOnRentDetail();
-    // getCarOnRentDetail();
   }, []);
 
   useEffect(() => {
     setCurrentPage(1);
+    getCars();
   }, [perPage]);
+
+  useEffect(() => {
+    getCars();
+  }, [carFilter,currentPage]);
 
   if (loader) {
     return (
@@ -241,22 +142,20 @@ export default function CarList({
         </Spinner>
       </div>
     );
-  } else if (carFilter === "onRent" && cars && carOnRentList && customerList) {
+  } else if (cars && (carFilter === "onRent"  || carFilter === 'preview')) {
     return (
       <CarOnRent
-        carRent={carOnRentList}
         cars={cars}
-        customers={customerList}
         reloadCarList={getCars}
+        carFilter={carFilter}
       />
     );
   }
 
   return (
     <Row>
-      {carsListFilter && carsListFilter.length ? (
-        carsListFilter
-          .slice((currentPage - 1) * perPage, currentPage * perPage)
+      {cars && cars.length ? (
+        cars
           .map((item) => (
             <div key={item.id} className="col-md-3 my-2">
               <Card className="card-custome">
@@ -268,7 +167,11 @@ export default function CarList({
                 </Card.Header>
                 <Card.Img
                   variant="bottom"
-                  src={item.image_url}
+                  src={
+                    process.env.REACT_APP_API_IMAGE_PATH +
+                    "/" +
+                    item.car_attachment?.url
+                  }
                   style={{ height: "250px", objectFit: "inherit" }}
                 />
                 <Card.Body>
@@ -299,7 +202,7 @@ export default function CarList({
                       label="car for rent"
                       onChange={(e) => onChangeHandler(e, item.id)}
                       className="ms-3"
-                      checked={item.car_for_rent === "yes" ? true : null}
+                      checked={item.car_for_rent}
                     />
                   </span>
                 </Card.Text>

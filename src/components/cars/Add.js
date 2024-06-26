@@ -3,52 +3,15 @@ import React, { useEffect, useState } from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "../../css/car.css";
 import FileUpload from "../fileUpload";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import { db, storage } from "../firebase/Firebase";
 import { useSelector } from "react-redux";
-import {
-  deleteObject,
-  getDownloadURL,
-  ref,
-  uploadBytes,
-} from "firebase/storage";
-import { v4 as uuid } from "uuid";
-import { toast, ToastContainer } from "react-toastify";
 import Emitter from "../../services/emitter";
 import { useParams, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { FaSpinner } from "react-icons/fa6";
-import notify from "../../services/notify";
-// CarForm component
-export default function CarForm() {
-  // const [carDetail, setCarDetail] = useState({
-  //   company_name: "",
-  //   model: "",
-  //   mileage: "",
-  //   color: "",
-  //   condition: "",
-  //   number: "",
-  //   engine_type: "",
-  //   price: "",
-  //   register_date: "",
-  //   status: "",
-  //   transmission: "",
-  //   fuel_type: "",
-  //   image_url: "",
-  //   owner_id: "",
-  // });
+import { axiosGetResponse, axiosPostResponse } from "../../services/axios";
 
+export default function CarForm() {
   const carTransmissions = [
     { label: "Select transmission type", value: "" },
     { label: "Manual Transmission (MT)", value: "manual" },
@@ -73,7 +36,8 @@ export default function CarForm() {
   const [attachmentLoader, setAttachmentLoader] = useState(false);
   const navigate = useNavigate();
   const [carImage, setCarImage] = useState([]);
-  const [removeAttachments, setRemmoveAttachments] = useState([]);
+  const [removeAttachments, setRemoveAttachments] = useState({ ids: [] });
+  const [manualAddFile, setManualAddFile] = useState(null);
 
   const user = useSelector((state) => state.app.user);
   const validationSchema = Yup.object({
@@ -113,119 +77,62 @@ export default function CarForm() {
     validationSchema: validationSchema,
     validate: async (values) => {
       const errors = {};
-      if (carImage && carImage.length === 0) {
+      if (
+        carImage &&
+        carImage.length === 0 &&
+        manualAddFile &&
+        manualAddFile.length === 0
+      ) {
         errors.image_url = "Car image is required";
       }
       values.owner_id = user.id;
       return errors;
     },
-    onSubmit: (values) => {
-      if (id) {
-        updateCarDetail();
-      } else {
-        addCarDetail();
+    onSubmit: async (values) => {
+      setLoader(true);
+
+      const formData = new FormData();
+      Object.keys(values).forEach((key) => {
+        if (key !== "car_attachments") formData.append(key, values[key]);
+      });
+
+      if (carImage && carImage.length) {
+        carImage.forEach((element, index) => {
+          formData.append(`files[${index}][dataURL]`, element.base64URL);
+          formData.append(`files[${index}][name]`, element.name);
+        });
       }
+
+      if (removeAttachments?.ids?.length) {
+        formData.append("remove_image_ids[]", removeAttachments.ids);
+      }
+
+      if (id) {
+        // Update Detail
+        formData.append("_method", "PUT");
+        const response = await axiosPostResponse(
+          `/cars/update/${id}`,
+          formData
+        );
+        if (response) {
+          clearData();
+          navigate("/profile");
+        }
+  
+      } else {
+        // Add Detail
+        const response = await axiosPostResponse("/cars/create", formData);
+        if (response) {
+          clearData();
+        }
+      }
+      setLoader(false);
     },
   });
 
-  /* 
-  const handleFormData = (e) => {
-    const { name, value } = e.target;
-    setCarDetail((preview) => ({
-      ...preview,
-      [name]: value,
-    }));
-  };
-
-  // Handle  submission
-  const handleSubmit = async (event) => {
-    if (carDetail && !carDetail.image_url) {
-      toast.warning("please upload image !");
-      return;
-    }
-    setCarDetail((preview) => ({
-      ...preview,
-      owner_id: user.id,
-    }));
-
-    if (id) {
-      updateCarDetail();
-    } else {
-      addCarDetail();
-    }
-  };
- 
-*/
-  async function addCarDetail() {
-    setLoader(true);
-    const url = await generateImageThumbnail();
-    const carCollection = collection(db, "cars");
-    await addDoc(carCollection, { ...formik.values, image_url: url })
-      .then(async (response) => {
-        console.log("Response", response);
-       await saveFileData(response.id);
-      })
-      .catch((error) => {
-        console.log("Error", error);
-      });
-      setLoader(false);
-  }
-
-  // Update car detail
-  async function updateCarDetail() {
-    // const url = await generateImageThumbnail();
-    const carDoc = doc(db, "cars", id);
-    await updateDoc(carDoc, { ...formik.values })
-      .then((response) => {
-        console.log("Response", response);
-        saveFileData(id);
-        clearData();
-        navigate("/profile");
-      })
-      .catch((error) => {
-        console.log("Error", error);
-      });
-  }
 
   const handelFileUploadSucces = (files) => {
-    console.log("call handelFileUploadSucces", files);
     setCarImage(files);
-  };
-
-  // Add Multiple car image to car attachments table
-  const saveFileData = async (id) => {
-    try {
-      const files = carImage.filter((obj) => obj.image);
-      // files.splice(0, 1);
-      const uploadPromises = files.map(async (file) => {
-        const imageRef = ref(storage, `images/${uuid()}`);
-        if (file && file.image) {
-          await uploadBytes(imageRef, file.image);
-          const url = await getDownloadURL(imageRef);
-          return { file, url };
-        }
-      });
-
-      const uploadedFiles = await Promise.all(uploadPromises);
-
-      const carAttachmentCollection = collection(db, "car_attachments");
-      uploadedFiles.forEach(async (uploadedFile) => {
-        console.log("uploadedFile", uploadedFile);
-        await addDoc(carAttachmentCollection, {
-          car_id: id,
-          url: uploadedFile.url,
-          name: uploadedFile.file.name,
-        });
-        if (removeAttachments && removeAttachments.length > 0) {
-         await deleteCarAttachments();
-        }
-      });
-      notify.success("Detail Added successfully");
-      clearData();
-    } catch (error) {
-      console.error("Error", error);
-      toast.error("Error uploading files");
-    }
   };
 
   //Clear form data
@@ -239,84 +146,33 @@ export default function CarForm() {
 
   async function getCarDetail() {
     setAttachmentLoader(true);
-    const carDoc = doc(db, "cars", id);
-    const response = await getDoc(carDoc);
-    const data = response.data();
-    formik.setValues(data);
 
-    const imageThumbnail = {
-      url: data.image_url,
-      id: id,
-      car_id: id,
-      name: data.company_name,
-    };
-    await getCarattachments(imageThumbnail);
+    const response = await axiosGetResponse(`cars/view/${id}`);
+    if (response) {
+      const data = response.data;
+      formik.setValues(data);
+      const attachments = data.car_attachments.map((item) => {
+        return {
+          ...item,
+          url: process.env.REACT_APP_API_IMAGE_PATH + "/" + item.url,
+        };
+      });
+      setManualAddFile(attachments);
+    }
     setAttachmentLoader(false);
   }
 
-  const removeFile = (file) => {
-    // setCarDetail((preview) => ({
-    //   ...preview,
-    //   image_url: null,
-    // }));
-    console.log("call remove file::", file);
-    setRemmoveAttachments((preview) => ({
-      ...preview,
-      file,
+  const removeFile = (id) => {
+    console.log("Removing file with id:", removeAttachments);
+    setRemoveAttachments((prevState) => ({
+      ...prevState,
+      ids: [...prevState.ids, id],
     }));
+
+    let manualFile = manualAddFile.filter((item) => item.id !== id);
+    setManualAddFile(manualFile);
   };
 
-  // Add image for thumbnail
-  async function generateImageThumbnail() {
-    const imageRef = ref(storage, `imagesThumbnail/${uuid()}`);
-    await uploadBytes(imageRef, carImage[0].image);
-    const url = await getDownloadURL(imageRef);
-    formik.setFieldValue("image_url", url);
-    return url;
-  }
-
-  async function getCarattachments(image) {
-    console.log("image: ", image);
-    const carCollection = collection(db, "car_attachments");
-
-    const q = query(carCollection, where("car_id", "==", id));
-    const response = await getDocs(q);
-    const attachments = response.docs.map((item) => ({
-      ...item.data(),
-      id: item.id,
-    }));
-
-    // attachments.push(image); 
-    console.log("attachments", attachments);
-    setCarImage(attachments);
-  }
-
-  async function deleteCarAttachments() {
-    // Get image id
-    let removeAttachmentsList = removeAttachments.map((item) => {
-      const uuidRegex = /images%2F([0-9a-fA-F-]+)\?/;
-      const uuidMatch = item.url.match(uuidRegex);
-      const imageId = uuidMatch ? uuidMatch[1] : null;
-      const id = item.id;
-
-      return {
-        imageId,
-        id,
-      };
-    });
-
-    removeAttachmentsList.forEach(async (item) => {
-      const imageRef = ref(storage, `images/${item.imageId}`);
-      const carAttachmentDoc = doc(db, "car_attachments", item.id);
-      await deleteDoc(carAttachmentDoc)
-        .then(async () => {
-          await deleteObject(imageRef);
-        })
-        .catch((err) => {
-          console.log("error", err);
-        });
-    });
-  }
   useEffect(() => {
     if (id) {
       getCarDetail();
@@ -324,7 +180,7 @@ export default function CarForm() {
 
     return () => {
       clearData();
-    }
+    };
   }, [id]);
 
   return (
@@ -582,7 +438,7 @@ export default function CarForm() {
               handelFileUpload={handelFileUploadSucces}
               handelFileRemove={removeFile}
               title={null}
-              file={carImage}
+              file={manualAddFile}
               isMultiple={true}
               isInvalid={formik.touched.image_url && !!formik.errors.image_url}
               errorMessage={formik.errors.image_url}
@@ -590,8 +446,16 @@ export default function CarForm() {
           )}
         </Row>
 
-        <Button variant="primary" className="mt-1 save" type="submit" disabled={loader}>
-          Submit {loader && <FaSpinner className="spinner-border spinner-border-sm border-0"/> }
+        <Button
+          variant="primary"
+          className="mt-1 save"
+          type="submit"
+          disabled={loader}
+        >
+          Submit{" "}
+          {loader && (
+            <FaSpinner className="spinner-border spinner-border-sm border-0" />
+          )}
         </Button>
         <Button
           variant="primary"

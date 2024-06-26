@@ -1,22 +1,12 @@
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-} from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { db } from "../firebase/Firebase";
 import { IoMdArrowRoundBack } from "react-icons/io";
 import { useSearchParams } from "react-router-dom";
 import GoogleMap from "../map/index";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import DatePicker from "react-multi-date-picker";
 import {
   Badge,
   Button,
@@ -29,9 +19,10 @@ import {
   Spinner,
 } from "react-bootstrap";
 import moment from "moment";
-import { ToastContainer, toast } from "react-toastify";
 import { Slide } from "react-slideshow-image";
 import { FaAnglesLeft, FaAnglesRight } from "react-icons/fa6";
+import { axiosGetResponse, axiosPostResponse } from "../../services/axios";
+import notify from "../../services/notify";
 
 export default function CarDetail() {
   const [car, setCar] = useState();
@@ -39,14 +30,13 @@ export default function CarDetail() {
   const userInfo = useSelector((state) => state.app.user);
   const navigate = useNavigate();
   const { id } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [isCarForRent, setIsCarForRent] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [carAttachments, setCarAttachments] = useState();
   const type = searchParams.get("type");
   const currentDate = moment().format("YYYY-MM-DD");
   const MySwal = withReactContent(Swal);
-
+  const [dateRange, setDateRange] = useState([new Date(), new Date()]);
   const [carRentDetail, setCarRentDetail] = useState({
     startDate: currentDate,
     endDate: currentDate,
@@ -54,42 +44,39 @@ export default function CarDetail() {
     customer_id: userInfo.id,
     no_of_day: null,
     per_day_rent: null,
-    rent: null,
+    total_rent: null,
     car_id: id,
     pickup_location: {},
   });
 
-  // Get specific car detail
-  const getCarDetail = async () => {
-    const carDoc = doc(db, "cars", id);
-    setLoader(true);
-    const response = await getDoc(carDoc);
-    const carDetail = response.data();
+  const [carBookedDates, setCarBookedDates] = useState([]);
 
-    const OWNER_ID = carDetail && carDetail.owner_id;
-    // set car owner Id
-    setCarRentDetail((preview) => ({
-      ...preview,
-      owner_id: OWNER_ID,
-    }));
-
-    setCar(carDetail);
-    // getCarattachments();
-    getCarOwnerDetail(carDetail.owner_id);
-    if (carDetail.seller_id) {
-      getSellerUserDetail(carDetail.seller_id);
-    }
+  // Function to check if a date falls within any of the booked date ranges
+  const isDateBooked = (date) => {
+    return carBookedDates.some(({ startDate, endDate }) => {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      return date >= start && date <= end;
+    });
   };
 
-  // get Car owner detail
-  const getCarOwnerDetail = async (ownerId) => {
-    const userDoc = doc(db, "users", ownerId);
-    const response = await getDoc(userDoc);
-    const owner = response.data();
-    setCar((preview) => ({
-      ...preview,
-      ownerDetail: owner,
-    }));
+  const isRangeBooked = (startDate, endDate) => {
+    const date = new Date(startDate);
+    while (date <= endDate) {
+      if (isDateBooked(date)) return true;
+      date.setDate(date.getDate() + 1);
+    }
+    return false;
+  };
+
+  // Get specific car detail
+  const getCarDetail = async () => {
+    setLoader(true);
+    const response = await axiosGetResponse(`cars/view/${id}`);
+    if (response) {
+      const data = response.data;
+      setCar(data);
+    }
     setLoader(false);
   };
 
@@ -112,85 +99,59 @@ export default function CarDetail() {
     });
   };
   // Buy car funcation
-  function buyCar() {
-    const userRef = doc(db, "cars", id);
-    const date = moment().format("YYYY/MM/DD");
-    console.log("date: ", date);
-
-    const carDetail = {
+  async function buyCar() {
+    const requestData = {
+      id: id,
       status: "sold",
-      seller_id: userInfo.id,
-      sellDate: date,
     };
-
-    updateDoc(userRef, carDetail)
-      .then(() => {
-        toast.success("Data updated");
-        getCarDetail();
-      })
-      .catch((error) => {
-        console.log("Error", error);
-      });
-  }
-
-  // seller detail
-  const getSellerUserDetail = async (id) => {
     setLoader(true);
-    const userDoc = doc(db, "users", id);
-    const response = await getDoc(userDoc);
-    const seller = response.data();
-    setCar((preview) => ({
-      ...preview,
-      sellerDetail: seller,
-    }));
+    const response = await axiosPostResponse(
+      `cars/change-status`,
+      requestData,
+      true
+    );
+    if (response) {
+      getCarDetail();
+    }
     setLoader(false);
-
-    setLoader(false);
-  };
+  }
 
   // set car for rent form detail
   const handelFormData = async (e) => {
-    const { name, value } = e.target;
-    console.log("name, value: ", name, value);
+    // const { name, value } = e.target;
+    setDateRange(e);
+    let startDate = e[0]?.format();
+    let endDate = e[1]?.format();
 
     setCarRentDetail((preview) => ({
       ...preview,
-      [name]: value,
+      startDate: startDate,
+      endDate: endDate,
     }));
   };
 
   //store data into firebase database
   const getCarForRent = async () => {
-    const carRentDoc = collection(db, "rent_car_details");
-    const carDoc = doc(db, "cars", id);
-    await addDoc(carRentDoc, carRentDetail)
-      .then((response) => {
-        // console.log("response: ", response);
-        updateDoc(carDoc, { status: "onRent" }) // Update car status as onRent
-          .then(() => {
-            toast.success("Your car is booked");
-            getCarDetail();
-            setShowModal(false);
-          })
-          .catch((err) => {
-            console.log("err: ", err);
-          });
-      })
-      .catch((err) => {
-        console.log("err: ", err);
-      });
+    console.log("carRentDetail: ", carRentDetail);
+    const response = await axiosPostResponse(
+      "/rental/create",
+      carRentDetail,
+      true
+    );
+
+    if (response) {
+      getCarDetail();
+      setShowModal(false);
+    }
   };
 
   // set user location data
   const handelUserLocation = (e) => {
-    console.log("e", e);
     setCarRentDetail((preview) => ({
       ...preview,
       pickup_location: e,
     }));
   };
-
-
 
   useEffect(() => {
     getCarDetail();
@@ -199,36 +160,14 @@ export default function CarDetail() {
     }
   }, []);
 
-  useEffect(() => {
-    async function getCarattachments() {
-      const carCollection = collection(db, "car_attachments");
-  
-      const q = query(carCollection, where("car_id", "==", id));
-      const response = await getDocs(q);
-      const attachments = response.docs.map((item) => ({
-        ...item.data(),
-        id: item.id,
-      }));
-  
-      attachments.push({
-        url: car && car.image_url,
-      });
-
-      console.log("attachments",attachments);
-      setCarAttachments(attachments);
-    }
-    getCarattachments();
-  },[id,car])
-
   // Set No of day & rent
   useEffect(() => {
-    console.log("call on loading...");
     let startDate = moment(carRentDetail.startDate);
     let endDate = moment(carRentDetail.endDate);
-    console.log("car", car);
-    // Check if endDate is less than startDate
-    if (endDate.isBefore(startDate)) {
-      toast.warning("Please Select valid end date!");
+    // Check if select date is on range
+    if (isRangeBooked(startDate, endDate)) {
+      notify.warn("Please Select valid end date!");
+      setDateRange();
     } else {
       let dayDifference = endDate.diff(startDate, "days") + 1;
       const PER_DAY_RENT = car && car.per_day_rent;
@@ -237,41 +176,63 @@ export default function CarDetail() {
         ...preview,
         no_of_day: dayDifference,
         per_day_rent: PER_DAY_RENT,
-        rent: totalRent,
+        total_rent: totalRent,
       }));
-      // console.log("Number of days:", totalRent);
+      //
     }
   }, [carRentDetail.startDate, carRentDetail.endDate, car]);
 
-    // css code start
+  useEffect(() => {
+    // Get Booked date range
+    const getBookedDateRange = async () => {
+      const requestData = {
+        car_id: id,
+      };
+      const response = await axiosPostResponse(
+        "cars/car-booked-date",
+        requestData,
+        false
+      );
 
-    const spanStyle = {
-      padding: '20px',
-      background: 'transmission',
-      color: '#000000',
-      fontSize:'24px',
-      fontWeight:600,
+      if (response) {
+        console.log("response: ", response);
+        setCarBookedDates(response.data);
+      }
     };
-    
-    const properties = {
-        prevArrow: <FaAnglesLeft className='text-primary'/>,
-        nextArrow: <FaAnglesRight className='text-primary'/>
+
+    if (showModal) {
+      getBookedDateRange();
     }
-    
-    const divStyle = {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundSize: 'cover', 
-      backgroundPosition: 'center', 
-      backgroundRepeat: 'no-repeat',
-      height: '300px'
-    };
+  }, [id, showModal]);
+  // css code start
+
+  const spanStyle = {
+    padding: "20px",
+    background: "transmission",
+    color: "#000000",
+    fontSize: "24px",
+    fontWeight: 600,
+  };
+
+  const properties = {
+    prevArrow: <FaAnglesLeft className="text-primary" />,
+    nextArrow: <FaAnglesRight className="text-primary" />,
+  };
+
+  const divStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    height: "300px",
+  };
   // css code end
 
   return (
     <div>
-      <Button className="ms-5" onClick={() => navigate(-1)}>
+      <Button className="ms-5 mt-2" onClick={() => navigate(-1)}>
         <IoMdArrowRoundBack />
         Back
       </Button>
@@ -284,24 +245,31 @@ export default function CarDetail() {
             </Spinner>
           </div>
         )}
+        {}
         {!loader && car && (
           <>
             <Row>
               <Col md={6}>
-                <div className="slide-container" >
+                <div className="slide-container">
                   <Slide {...properties}>
-                    {carAttachments && carAttachments.map((slideImage, index) => (
-                      <div key={index}>
-                        <div
-                          style={{
-                            ...divStyle,
-                            backgroundImage: `url(${slideImage.url})`,
-                          }}
-                        >
-                          <span style={spanStyle}>{slideImage.caption}</span>
+                    {car &&
+                      car.car_attachments &&
+                      car.car_attachments.map((slideImage, index) => (
+                        <div key={index}>
+                          <div
+                            style={{
+                              ...divStyle,
+                              backgroundImage: `url(${
+                                process.env.REACT_APP_API_IMAGE_PATH +
+                                "/" +
+                                slideImage.url
+                              })`,
+                            }}
+                          >
+                            <span style={spanStyle}>{slideImage?.caption}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </Slide>
                 </div>
               </Col>
@@ -337,7 +305,6 @@ export default function CarDetail() {
                 {/* Buy & rent Button start */}
                 {!car.seller_id &&
                   car.owner_id !== userInfo.id &&
-                  car.status !== "onRent" &&
                   (isCarForRent ? (
                     <Button onClick={() => setShowModal(true)}>
                       Get Car For Rent
@@ -376,41 +343,52 @@ export default function CarDetail() {
                 <Row>
                   <Col md={6}>
                     <span className="heading">Owner Detail</span>
-                    {car.image_url && (
-                      <Image src={car.ownerDetail.avatar} thumbnail />
-                    )}
+
+                    <Image
+                      src={
+                        process.env.REACT_APP_API_IMAGE_PATH +
+                        "/" +
+                        car.owner?.avatar
+                      }
+                      thumbnail
+                    />
                   </Col>
                   <Col md={6} className="mt-4 pt-4">
                     <p>
-                      <strong>Name:</strong> {car.ownerDetail.full_name}
+                      <strong>Name:</strong> {car.owner.full_name}
                     </p>
                     <p>
-                      <strong>Email:</strong> {car.ownerDetail.email}
+                      <strong>Email:</strong> {car.owner.email}
                     </p>
                     <p>
-                      <strong>City:</strong> {car.ownerDetail.city}
+                      <strong>Phone:</strong> {car.owner.phone}
                     </p>
                   </Col>
                 </Row>
               </Col>
-              {car.sellerDetail && (
+              {car.seller && (
                 <Col md={6}>
                   <Row>
                     <Col md={6}>
                       <span className="heading">Seller Detail</span>
-                      {car.image_url && (
-                        <Image src={car.sellerDetail.avatar} thumbnail />
-                      )}
+                      <Image
+                        src={
+                          process.env.REACT_APP_API_IMAGE_PATH +
+                          "/" +
+                          car.seller?.avatar
+                        }
+                        thumbnail
+                      />
                     </Col>
                     <Col md={6} className="mt-4 pt-4">
                       <p>
-                        <strong>Name:</strong> {car.sellerDetail.full_name}
+                        <strong>Name:</strong> {car.seller.full_name}
                       </p>
                       <p>
-                        <strong>Email:</strong> {car.sellerDetail.email}
+                        <strong>Email:</strong> {car.seller.email}
                       </p>
                       <p>
-                        <strong>City:</strong> {car.sellerDetail.city}
+                        <strong>phone:</strong> {car.seller.phone}
                       </p>
                     </Col>
                   </Row>
@@ -420,7 +398,6 @@ export default function CarDetail() {
           </>
         )}
       </Container>
-      <ToastContainer />
 
       {/* Car for rent modal */}
       <Modal
@@ -434,30 +411,29 @@ export default function CarDetail() {
         </Modal.Header>
         <Modal.Body>
           <Row className="mb-3">
-            <Col>
-              <Form.Group controlId="startDate">
-                <Form.Label>Star date</Form.Label>
-                <Form.Control
-                  type="date"
-                  placeholder="Enter car color"
-                  name="startDate"
-                  value={carRentDetail.startDate}
-                  min={moment().format("YYYY-MM-DD")} 
-                  onChange={handelFormData}
-                />
-              </Form.Group>
-            </Col>
-
-            <Col>
+            <Col className="col-6">
               <Form.Group controlId="endDate">
-                <Form.Label>End date</Form.Label>
-                <Form.Control
-                  type="date"
-                  placeholder="Enter car color"
-                  name="endDate"
-                  value={carRentDetail.endDate}
-                  min={moment().format("YYYY-MM-DD")} 
+                <Form.Label>Select Date</Form.Label>
+                <DatePicker
+                  value={dateRange}
                   onChange={handelFormData}
+                  dateSeparator=" to "
+                  range
+                  rangeHover
+                  containerClassName="date-select mx-2 form-control"
+                  placeholder="Select Date"
+                  minDate={moment().format("YYYY-MM-DD")}
+                  mapDays={({ date }) => {
+                    let props = {};
+                    if (isDateBooked(date.toDate())) {
+                      props.disabled = true;
+                      props.style = {
+                        backgroundColor: "#d7d3d3",
+                        color: "#fff",
+                      };
+                    }
+                    return props;
+                  }}
                 />
               </Form.Group>
             </Col>
@@ -470,7 +446,7 @@ export default function CarDetail() {
             </Col>
             <Col>
               <Form.Label className="mt-2">
-                Total::{carRentDetail.rent}
+                Total::{carRentDetail.total_rent}
               </Form.Label>
             </Col>
           </Row>

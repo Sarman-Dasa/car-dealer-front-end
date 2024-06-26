@@ -39,4 +39,13 @@
 .owner-detail img {
   height: 200px;
   width: 200px;
+}
+
+.date-select input {
+  border: 0px;
+  min-width: -webkit-fill-available;
+}
+.date-select input:active, .date-select input:focus {
+  border: 0px;
+  border-radius: 0px;
 }/*# sourceMappingURL=car.css.map */

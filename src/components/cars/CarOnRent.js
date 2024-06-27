@@ -1,6 +1,6 @@
 
 import moment from "moment";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   Badge,
   Button,
@@ -18,13 +18,13 @@ import withReactContent from "sweetalert2-react-content";
 import imageNotFound from "../../image/not-found.jpg";
 import { axiosPostResponse } from "../../services/axios";
 import Emitter from "../../services/emitter";
+import { CarFilterContext } from "../user/Profile";
 
-export default function CarOnRent({ cars, reloadCarList,carFilter }) {
+export default function CarOnRent({ cars, reloadCarList }) {
   const [openItem, setOpenItem] = useState({});
-  const [carRentFilter, setCarRentFilter] = useState(carFilter);
   const MySwal = withReactContent(Swal);
 
-  console.log("call really",carFilter);
+  const { carFilter, setCarFilter } = useContext(CarFilterContext);
 
   // Toggle car detail collepase
   const collapaseToggle = (index) => {
@@ -82,18 +82,13 @@ export default function CarOnRent({ cars, reloadCarList,carFilter }) {
     }
   }
 
-  useEffect(() => {
-    // console.log("call filter::");
-    Emitter.emit('reloadCar',carRentFilter);
-  }, [carRentFilter]);
-
   return (
     <>
       <div className="float-end mb-5 me-2">
-        <Button onClick={() => setCarRentFilter("onRent")}>
+        <Button onClick={() => setCarFilter("onRent")}>
           Show current car on rent detail
         </Button>
-        <Button onClick={() => setCarRentFilter("preview")} className="ms-3">
+        <Button onClick={() => setCarFilter("preview")} className="ms-3">
           Show past car on rent detail
         </Button>
       </div>
@@ -105,7 +100,7 @@ export default function CarOnRent({ cars, reloadCarList,carFilter }) {
               <th>Company Name</th>
               <th>Model</th>
               <th>Number</th>
-              {carRentFilter === "onRent" && <th>Action</th>}
+              {carFilter === "onRent" && <th>Action</th>}
             </tr>
           </thead>
           <tbody>
@@ -141,7 +136,7 @@ export default function CarOnRent({ cars, reloadCarList,carFilter }) {
                   <td>{item.company_name}</td>
                   <td>{item.model}</td>
                   <td>{item.number}</td>
-                  {carRentFilter === "onRent" && (
+                  {carFilter === "onRent" && (
                     <td className="text-start">
                       <OverlayTrigger
                         placement="top"

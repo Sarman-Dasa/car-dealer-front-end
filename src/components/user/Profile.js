@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { createContext, useCallback, useEffect, useState } from "react";
 import { Badge, Button, Col, Form, Row } from "react-bootstrap";
 import { db, storage } from "../firebase/Firebase";
 import "../../css/profile.css";
@@ -17,6 +17,8 @@ import AddDum from "../../data/AddDum";
 import CarList from "./CarList";
 import { axiosPostResponse } from "../../services/axios";
 import Emitter from "../../services/emitter";
+export const CarFilterContext = createContext()
+
 export default function Profile() {
   const userInfo = useSelector((state) => state.app.user);
   const [showUpload, setShowUpload] = useState(false);
@@ -106,6 +108,11 @@ export default function Profile() {
       Emitter.off('reloadCarStatusCount');
       Emitter.off('reloadCar');
     };
+  }, []);
+
+  // Memoize the setter function
+  const setCarTotalCountCallback = useCallback((count) => {
+    setCarTotalCount(count);
   }, []);
 
   return (
@@ -240,12 +247,13 @@ export default function Profile() {
           </Col>
           {/* Car Details */}
           <Col md={9} sm={12} className="car-detail">
+          <CarFilterContext.Provider value={{carFilter, setCarFilter}}>
             <CarList
               setCarCount={setCarCount}
-              setCarTotalCount={setCarTotalCount}
-              carFilter={carFilter}
+              setCarTotalCount={setCarTotalCountCallback}
               perPage={perPage}
             />
+            </CarFilterContext.Provider>
           </Col>
         </Row>
       </div>

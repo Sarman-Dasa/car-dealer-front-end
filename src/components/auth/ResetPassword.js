@@ -69,7 +69,7 @@ export default function ChangePassword() {
       setLoader(false);
     }
     checkEmailVerifyToken();
-  }, [token]);
+  }, [email, token]);
 
   if (!isValidToken) {
     return (

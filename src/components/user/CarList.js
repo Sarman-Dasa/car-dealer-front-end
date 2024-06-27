@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Badge, Card, Form, Row, Spinner, Button } from "react-bootstrap";
 import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -8,23 +8,25 @@ import notFoundImg from "../../image/not-found.jpg";
 import CarOnRent from "../cars/CarOnRent";
 import MyPagination from "../pagination";
 import { axiosDeleteResponse, axiosPostResponse } from "../../services/axios";
+import { CarFilterContext } from "./Profile";
+import Emitter from "../../services/emitter";
 
-export default function CarList({ setCarTotalCount, carFilter, perPage }) {
+export default function CarList({ setCarTotalCount, perPage }) {
   const MySwal = withReactContent(Swal);
   const [loader, setLoader] = useState(false);
   const [cars, setCars] = useState();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState();
   const navigate = useNavigate();
+  const { carFilter } = useContext(CarFilterContext);
 
   //Get Cars list
-  const getCars = async () => {
+  const getCars = useCallback(async () => {
     setLoader(true);
-
     const requestData = {
       status: carFilter,
       per_page: perPage,
-      page:currentPage
+      page: currentPage,
     };
 
     const response = await axiosPostResponse(
@@ -37,8 +39,9 @@ export default function CarList({ setCarTotalCount, carFilter, perPage }) {
       setTotalCount(data.count);
       setCarTotalCount(data.count);
     }
+
     setLoader(false);
-  };
+  }, [carFilter, perPage, currentPage, setCarTotalCount]);
 
   // Navigate to edit page
   const editCarDetail = (id) => {
@@ -90,6 +93,7 @@ export default function CarList({ setCarTotalCount, carFilter, perPage }) {
     );
     if (response) {
       getCars();
+      Emitter.emit('reloadCarStatusCount',true);
     }
   }
 
@@ -114,25 +118,20 @@ export default function CarList({ setCarTotalCount, carFilter, perPage }) {
 
   // Delete Car
   async function deleteCar(id) {
-      
-    const response = await axiosDeleteResponse(`cars/delete/${id}`,{},true);
-    if(response) {
+    const response = await axiosDeleteResponse(`cars/delete/${id}`, {}, true);
+    if (response) {
       getCars();
+      Emitter.emit('reloadCarStatusCount',true);
     }
   }
 
   useEffect(() => {
     getCars();
-  }, []);
+  }, [getCars]);
 
   useEffect(() => {
     setCurrentPage(1);
-    getCars();
   }, [perPage]);
-
-  useEffect(() => {
-    getCars();
-  }, [carFilter,currentPage]);
 
   if (loader) {
     return (
@@ -142,87 +141,80 @@ export default function CarList({ setCarTotalCount, carFilter, perPage }) {
         </Spinner>
       </div>
     );
-  } else if (cars && (carFilter === "onRent"  || carFilter === 'preview')) {
-    return (
-      <CarOnRent
-        cars={cars}
-        reloadCarList={getCars}
-        carFilter={carFilter}
-      />
-    );
+  } else if (cars && (carFilter === "onRent" || carFilter === "preview")) {
+    return <CarOnRent cars={cars} reloadCarList={getCars} />;
   }
 
   return (
     <Row>
       {cars && cars.length ? (
-        cars
-          .map((item) => (
-            <div key={item.id} className="col-md-3 my-2">
-              <Card className="card-custome">
-                <Card.Header className="text-end">
-                  <FaEdit
-                    className="text-primary"
-                    onClick={() => editCarDetail(item.id)}
-                  />
-                </Card.Header>
-                <Card.Img
-                  variant="bottom"
-                  src={
-                    process.env.REACT_APP_API_IMAGE_PATH +
-                    "/" +
-                    item.car_attachment?.url
-                  }
-                  style={{ height: "250px", objectFit: "inherit" }}
+        cars.map((item) => (
+          <div key={item.id} className="col-md-3 my-2">
+            <Card className="card-custome">
+              <Card.Header className="text-end">
+                <FaEdit
+                  className="text-primary"
+                  onClick={() => editCarDetail(item.id)}
                 />
-                <Card.Body>
-                  <Card.Title>{item.company_name}</Card.Title>
-                  <Card.Subtitle className="mb-2 float-end me-2">
-                    {item.model}
-                  </Card.Subtitle>
-                </Card.Body>
-                <Card.Text>
-                  <p className="ms-3" style={{ fontWeight: "600" }}>
-                    Rs.{item.price}
-                    <Badge
-                      variant="primary"
-                      className={`float-end me-2
+              </Card.Header>
+              <Card.Img
+                variant="bottom"
+                src={
+                  process.env.REACT_APP_API_IMAGE_PATH +
+                  "/" +
+                  item.car_attachment?.url
+                }
+                style={{ height: "250px", objectFit: "inherit" }}
+              />
+              <Card.Body>
+                <Card.Title>{item.company_name}</Card.Title>
+                <Card.Subtitle className="mb-2 float-end me-2">
+                  {item.model}
+                </Card.Subtitle>
+              </Card.Body>
+              <Card.Text>
+                <p className="ms-3" style={{ fontWeight: "600" }}>
+                  Rs.{item.price}
+                  <Badge
+                    variant="primary"
+                    className={`float-end me-2
                                 ${
                                   item.status === "available"
                                     ? `bg-primary`
                                     : `bg-danger`
                                 }`}
-                    >
-                      {item.status}
-                    </Badge>
-                  </p>
-                  <span>
-                    <Form.Check
-                      type="switch"
-                      id="custom-switch"
-                      label="car for rent"
-                      onChange={(e) => onChangeHandler(e, item.id)}
-                      className="ms-3"
-                      checked={item.car_for_rent}
-                    />
-                  </span>
-                </Card.Text>
-                <Card.Footer className="text-bg-dark">
-                  <Button
-                    className="text-bg-primary viewBtn"
-                    onClick={() => navigate(`/car-view/${item.id}`)}
                   >
-                    View
-                  </Button>
-                  <Button
-                    className="text-bg-danger btn-danger deleteBtn"
-                    onClick={() => deleteConfirmation(item.id)}
-                  >
-                    Delete
-                  </Button>
-                </Card.Footer>
-              </Card>
-            </div>
-          ))
+                    {item.status}
+                  </Badge>
+                </p>
+                <span>
+                  <Form.Check
+                    type="switch"
+                    id="custom-switch"
+                    label="car for rent"
+                    onChange={(e) => onChangeHandler(e, item.id)}
+                    className="ms-3"
+                    checked={item.car_for_rent}
+                  />
+                </span>
+              </Card.Text>
+              <Card.Footer className="text-bg-dark">
+                <Button
+                  className="text-bg-primary viewBtn"
+                  onClick={() => navigate(`/car-view/${item.id}`)}
+                >
+                  View
+                </Button>
+                <Button
+                  className="text-bg-danger btn-danger deleteBtn"
+                  onClick={() => deleteConfirmation(item.id)}
+                >
+                  Delete
+                </Button>
+              </Card.Footer>
+            </Card>
+          </div>
+        ))
       ) : (
         <div className="text-center">
           <img

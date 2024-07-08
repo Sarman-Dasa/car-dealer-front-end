@@ -41,4 +41,37 @@
 }
 .vertical-menu .dropdown .dropdown-menu .dropdown-item:hover:last-child:hover {
   background-color: transparent;
+}
+
+.sidebar {
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  background-color: #343a40;
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.sidebar .nav-link {
+  color: #fff;
+}
+.sidebar .nav-link:hover {
+  background-color: #495057;
+}
+
+.content {
+  margin-left: 250px;
+  padding: 20px;
+}
+
+.bottom-nav {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+}
+.bottom-nav .dropdown-toggle::after {
+  display: none !important;
 }/*# sourceMappingURL=style.css.map */

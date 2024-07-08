@@ -17,10 +17,12 @@ import AddDum from "../../data/AddDum";
 import CarList from "./CarList";
 import { axiosPostResponse } from "../../services/axios";
 import Emitter from "../../services/emitter";
+import ErrorBoundary from "../Error/ErrorBoundary";
+import useUserInfo from "../../hook/useUserInfo";
 export const CarFilterContext = createContext()
 
 export default function Profile() {
-  const userInfo = useSelector((state) => state.app.user);
+  const userInfo = useUserInfo();
   const [showUpload, setShowUpload] = useState(false);
   const [carCount, setCarCount] = useState(null);
   const [carFilter, setCarFilter] = useState(null);
@@ -248,11 +250,13 @@ export default function Profile() {
           {/* Car Details */}
           <Col md={9} sm={12} className="car-detail">
           <CarFilterContext.Provider value={{carFilter, setCarFilter}}>
+          <ErrorBoundary>
             <CarList
               setCarCount={setCarCount}
               setCarTotalCount={setCarTotalCountCallback}
               perPage={perPage}
             />
+            </ErrorBoundary>
             </CarFilterContext.Provider>
           </Col>
         </Row>

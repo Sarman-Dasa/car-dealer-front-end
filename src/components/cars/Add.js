@@ -10,6 +10,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { FaSpinner } from "react-icons/fa6";
 import { axiosGetResponse, axiosPostResponse } from "../../services/axios";
+import useOnlineStatus from "../../hook/useOnlineStatus";
 
 export default function CarForm() {
   const carTransmissions = [
@@ -38,6 +39,7 @@ export default function CarForm() {
   const [carImage, setCarImage] = useState([]);
   const [removeAttachments, setRemoveAttachments] = useState({ ids: [] });
   const [manualAddFile, setManualAddFile] = useState(null);
+  const isOnline = useOnlineStatus();
 
   const user = useSelector((state) => state.app.user);
   const validationSchema = Yup.object({
@@ -450,9 +452,9 @@ export default function CarForm() {
           variant="primary"
           className="mt-1 save"
           type="submit"
-          disabled={loader}
+          disabled={loader || !isOnline}
         >
-          Submit{" "}
+         {isOnline ? 'Submit' : 'Reconnting...' } 
           {loader && (
             <FaSpinner className="spinner-border spinner-border-sm border-0" />
           )}
